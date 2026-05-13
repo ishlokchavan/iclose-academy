@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils/cn";
-import type { NavSection } from "@/config/nav";
+import { NAV_ICONS, type NavSection } from "@/config/nav";
 
 export function BottomNav({ sections }: { sections: NavSection[] }) {
   const pathname = usePathname();
@@ -25,6 +25,7 @@ export function BottomNav({ sections }: { sections: NavSection[] }) {
       <ul className="grid h-16 grid-cols-4">
         {items.map((item) => {
           const active = isActive(pathname, item.href);
+          const Icon = NAV_ICONS[item.icon];
           return (
             <li key={item.href}>
               <Link
@@ -35,7 +36,7 @@ export function BottomNav({ sections }: { sections: NavSection[] }) {
                   active ? "text-ink" : "text-ink-muted hover:text-ink",
                 )}
               >
-                <item.icon
+                <Icon
                   className={cn("size-5 shrink-0", active && "text-accent")}
                   aria-hidden
                 />

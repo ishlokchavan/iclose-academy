@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { Brand } from "@/components/shell/Brand";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils/cn";
-import type { NavSection } from "@/config/nav";
+import { NAV_ICONS, type NavSection } from "@/config/nav";
 
 export function Sidebar({ sections }: { sections: NavSection[] }) {
   const pathname = usePathname();
@@ -34,6 +34,7 @@ export function Sidebar({ sections }: { sections: NavSection[] }) {
             <ul className="space-y-0.5">
               {section.items.map((item) => {
                 const active = isActive(pathname, item.href);
+                const Icon = NAV_ICONS[item.icon];
                 return (
                   <li key={item.href}>
                     <Link
@@ -46,7 +47,7 @@ export function Sidebar({ sections }: { sections: NavSection[] }) {
                           : "text-ink-muted hover:bg-surface-subtle hover:text-ink",
                       )}
                     >
-                      <item.icon className="size-4 shrink-0" aria-hidden />
+                      <Icon className="size-4 shrink-0" aria-hidden />
                       <span className="truncate">{item.label}</span>
                     </Link>
                   </li>
