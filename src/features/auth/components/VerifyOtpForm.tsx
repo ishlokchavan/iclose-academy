@@ -42,8 +42,8 @@ export function VerifyOtpForm({ email, next }: { email: string; next?: string })
             id="token"
             name="token"
             inputMode="numeric"
-            pattern="\d{6}"
-            maxLength={6}
+            pattern="\d{6,10}"
+            maxLength={10}
             autoComplete="one-time-code"
             placeholder="123456"
             className="text-center font-mono text-lg tracking-[0.5em]"

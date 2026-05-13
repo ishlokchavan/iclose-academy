@@ -26,7 +26,7 @@ export const verifyOtpSchema = z.object({
   token: z
     .string()
     .trim()
-    .regex(/^\d{6}$/u, "Enter the 6-digit code from your email"),
+    .regex(/^\d{6,10}$/u, "Enter the code from your email"),
 });
 
 export type SignUpInput = z.infer<typeof signUpSchema>;
