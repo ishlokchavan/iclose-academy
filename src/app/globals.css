@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Surfaces — Kinetic Precision palette */
+    --background: 0 0% 98%;          /* #FAFAFA */
+    --surface: 0 0% 98%;
+    --surface-subtle: 0 0% 96%;      /* #F5F5F7 */
+    --surface-raised: 0 0% 100%;     /* #FFFFFF */
+
+    /* Ink — primary and muted text */
+    --foreground: 240 6% 12%;        /* #1d1d1f */
+    --ink: 240 6% 12%;
+    --ink-muted: 240 2% 45%;         /* #6e6e73 */
+
+    /* Hairlines */
+    --hairline: 240 5% 91%;          /* #EAEAEA */
+
+    /* Accent — electric blue, reserved for interactive */
+    --accent: 211 100% 50%;          /* #0070F3 */
+    --accent-foreground: 0 0% 100%;
+    --accent-hover: 213 100% 47%;
+    --accent-subtle: 211 100% 96%;
+
+    /* Destructive */
+    --destructive: 0 73% 41%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Sizing tokens */
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-background font-sans text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-background;
+  }
+  ::selection {
+    @apply bg-accent/15 text-foreground;
+  }
+}
+
+@layer components {
+  .eyebrow {
+    @apply font-mono uppercase tracking-widest text-eyebrow text-ink-muted;
+  }
+  .display {
+    @apply font-display tracking-tighter;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
