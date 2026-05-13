@@ -8,7 +8,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   createTrackSchema,
   updateTrackSchema,
-} from "@/features/educator/schemas";
+} from "@/features/educator/schemas/track";
 
 export type ActionState =
   | { error: string; fieldErrors?: Record<string, string> }

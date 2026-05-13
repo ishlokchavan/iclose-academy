@@ -10,7 +10,7 @@ import {
   type ActionState,
   createTrackAction,
 } from "@/features/educator/server/actions";
-import { slugify } from "@/features/educator/schemas";
+import { slugify } from "@/features/educator/schemas/track";
 
 type Taxonomy = { id: string; slug: string; name: string };
 
