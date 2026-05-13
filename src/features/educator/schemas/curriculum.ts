@@ -103,3 +103,25 @@ export type UpdateModuleInput = z.infer<typeof updateModuleSchema>;
 export type CreateLessonInput = z.infer<typeof createLessonSchema>;
 export type UpdateLessonInput = z.infer<typeof updateLessonSchema>;
 export type Chapter = z.infer<typeof chapterSchema>;
+
+// ----------------------------------------------------------------------------
+// Lesson resources
+// ----------------------------------------------------------------------------
+export const createLinkResourceSchema = z.object({
+  label: requiredString("Label", 120),
+  url: z.preprocess(
+    (v) => (typeof v === "string" ? v.trim() : ""),
+    z.string().url("Enter a valid URL").max(2000),
+  ),
+});
+
+export const createFileResourceSchema = z.object({
+  label: requiredString("Label", 120),
+  storage_path: z.preprocess(
+    (v) => (typeof v === "string" ? v.trim() : ""),
+    z.string().min(1, "Storage path required").max(500),
+  ),
+});
+
+export type CreateLinkResourceInput = z.infer<typeof createLinkResourceSchema>;
+export type CreateFileResourceInput = z.infer<typeof createFileResourceSchema>;

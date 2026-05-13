@@ -42,6 +42,7 @@ export default async function CurriculumPage({ params }: Props) {
       <CurriculumEditor
         trackId={track.id}
         trackSlug={track.slug}
+        educatorUserId={track.educator_id}
         modules={track.modules}
       />
     </div>

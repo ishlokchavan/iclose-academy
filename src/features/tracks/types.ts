@@ -32,6 +32,7 @@ export type TrackCardData = {
   level: LevelPreview | null;
   educator: EducatorPreview | null;
   enrollment: EnrollmentPreview | null;
+  saved: boolean;
   lessonCount: number;
 };
 

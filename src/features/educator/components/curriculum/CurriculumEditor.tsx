@@ -39,6 +39,13 @@ type Lesson = {
   duration_seconds: number | null;
   is_preview: boolean;
   chapters?: Chapter[];
+  resources?: Array<{
+    id: string;
+    label: string;
+    url: string | null;
+    storage_path: string | null;
+    kind: string;
+  }>;
 };
 
 type Module = {
@@ -52,10 +59,12 @@ type Module = {
 export function CurriculumEditor({
   trackId,
   trackSlug,
+  educatorUserId,
   modules,
 }: {
   trackId: string;
   trackSlug: string;
+  educatorUserId: string;
   modules: Module[];
 }) {
   const router = useRouter();
@@ -181,7 +190,9 @@ export function CurriculumEditor({
                     <LessonEditForm
                       lesson={lesson}
                       trackSlug={trackSlug}
+                      educatorUserId={educatorUserId}
                       initialChapters={lesson.chapters ?? []}
+                      resources={lesson.resources ?? []}
                       onDone={() => {
                         setEditingLessonId(null);
                         refresh();

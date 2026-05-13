@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Clock, BookOpen, User } from "lucide-react";
 
+import { BookmarkButton } from "@/features/tracks/components/BookmarkButton";
 import { cn } from "@/lib/utils/cn";
 import type { TrackCardData } from "../types";
 
@@ -61,6 +62,11 @@ export function TrackCard({ track, className }: Props) {
             Enrolled
           </span>
         )}
+        <BookmarkButton
+          trackId={track.id}
+          initialSaved={track.saved}
+          className={track.enrollment ? "" : "ml-auto"}
+        />
       </div>
 
       {/* Title */}

@@ -47,16 +47,26 @@ export async function getTracks({
 
   const trackIds = rawTracks.map((t) => t.id);
   const enrollmentMap: Record<string, { id: string; status: string }> = {};
+  const savedSet = new Set<string>();
 
   if (userId) {
-    const { data: enrollments } = await supabase
-      .from("enrollments")
-      .select("id, track_id, status")
-      .eq("user_id", userId)
-      .in("track_id", trackIds);
+    const [{ data: enrollments }, { data: saved }] = await Promise.all([
+      supabase
+        .from("enrollments")
+        .select("id, track_id, status")
+        .eq("user_id", userId)
+        .in("track_id", trackIds),
+      supabase
+        .from("saved_items")
+        .select("entity_id")
+        .eq("user_id", userId)
+        .eq("entity_type", "track")
+        .in("entity_id", trackIds),
+    ]);
     for (const e of enrollments ?? []) {
       enrollmentMap[e.track_id] = { id: e.id, status: e.status };
     }
+    for (const s of saved ?? []) savedSet.add(s.entity_id);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -72,6 +82,7 @@ export async function getTracks({
     level: t.level,
     educator: t.educator,
     enrollment: enrollmentMap[t.id] ?? null,
+    saved: savedSet.has(t.id),
     lessonCount: (t.modules ?? []).reduce(
       (sum: number, m: { lessons: unknown[] }) => sum + (m.lessons?.length ?? 0),
       0,
@@ -108,14 +119,25 @@ export async function getTrackWithContent({
   if (!raw) return null;
 
   let enrollment: { id: string; status: string } | null = null;
+  let saved = false;
   if (userId) {
-    const { data: e } = await supabase
-      .from("enrollments")
-      .select("id, status")
-      .eq("user_id", userId)
-      .eq("track_id", raw.id)
-      .maybeSingle();
+    const [{ data: e }, { data: s }] = await Promise.all([
+      supabase
+        .from("enrollments")
+        .select("id, status")
+        .eq("user_id", userId)
+        .eq("track_id", raw.id)
+        .maybeSingle(),
+      supabase
+        .from("saved_items")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("entity_type", "track")
+        .eq("entity_id", raw.id)
+        .maybeSingle(),
+    ]);
     enrollment = e;
+    saved = !!s;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -156,6 +178,7 @@ export async function getTrackWithContent({
       : [],
     modules,
     enrollment,
+    saved,
     lessonCount,
   };
 }

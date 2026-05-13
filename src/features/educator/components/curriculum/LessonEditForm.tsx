@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { ChapterEditor } from "@/features/educator/components/curriculum/ChapterEditor";
+import { ResourceManager } from "@/features/educator/components/curriculum/ResourceManager";
 import { updateLessonAction } from "@/features/educator/server/curriculum-actions";
 import type { Chapter } from "@/features/educator/schemas/curriculum";
 
@@ -19,15 +20,27 @@ type LessonInput = {
   is_preview: boolean;
 };
 
+type ResourceRow = {
+  id: string;
+  label: string;
+  url: string | null;
+  storage_path: string | null;
+  kind: string;
+};
+
 export function LessonEditForm({
   lesson,
   trackSlug,
+  educatorUserId,
   initialChapters,
+  resources,
   onDone,
 }: {
   lesson: LessonInput;
   trackSlug: string;
+  educatorUserId: string;
   initialChapters: Chapter[];
+  resources: ResourceRow[];
   onDone: () => void;
 }) {
   const [chapters, setChapters] = useState<Chapter[]>(initialChapters);
@@ -110,6 +123,16 @@ export function LessonEditForm({
       <div className="space-y-2">
         <Label>Chapters</Label>
         <ChapterEditor initial={initialChapters} onChange={setChapters} />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Resources</Label>
+        <ResourceManager
+          lessonId={lesson.id}
+          trackSlug={trackSlug}
+          userId={educatorUserId}
+          resources={resources}
+        />
       </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}

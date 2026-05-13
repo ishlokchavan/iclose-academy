@@ -119,6 +119,14 @@ export type EducatorTrackDetail = {
       is_preview: boolean;
       youtube_id: string | null;
       chapters: Array<{ t: number; label: string }>;
+      resources: Array<{
+        id: string;
+        label: string;
+        url: string | null;
+        storage_path: string | null;
+        kind: string;
+        sort_order: number;
+      }>;
     }>;
   }>;
 };
@@ -138,7 +146,10 @@ export async function getEducatorTrackBySlug(
        educator_id, published_at, archived_at,
        modules(
          id, position, title, summary,
-         lessons(id, position, title, summary, duration_seconds, is_preview, youtube_id, chapters)
+         lessons(
+           id, position, title, summary, duration_seconds, is_preview, youtube_id, chapters,
+           resources:lesson_resources(id, label, url, storage_path, kind, sort_order)
+         )
        )`,
     )
     .eq("slug", slug)
@@ -149,6 +160,14 @@ export async function getEducatorTrackBySlug(
   const r = data as any;
   if (!isStaff && r.educator_id !== userId) return null;
 
+  type RawResource = {
+    id: string;
+    label: string;
+    url: string | null;
+    storage_path: string | null;
+    kind: string;
+    sort_order: number;
+  };
   type RawLesson = {
     id: string;
     position: number;
@@ -158,6 +177,7 @@ export async function getEducatorTrackBySlug(
     is_preview: boolean;
     youtube_id: string | null;
     chapters: unknown;
+    resources?: RawResource[];
   };
   const modules = (r.modules ?? [])
     .map((m: { lessons?: RawLesson[] } & Record<string, unknown>) => ({
@@ -169,6 +189,7 @@ export async function getEducatorTrackBySlug(
           chapters: Array.isArray(l.chapters)
             ? (l.chapters as Array<{ t: number; label: string }>)
             : [],
+          resources: (l.resources ?? []).sort((a, b) => a.sort_order - b.sort_order),
         })),
     }))
     .sort((a: { position: number }, b: { position: number }) => a.position - b.position);
