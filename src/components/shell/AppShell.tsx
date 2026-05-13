@@ -2,6 +2,7 @@ import { BottomNav } from "@/components/shell/BottomNav";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { TopBar } from "@/components/shell/TopBar";
 import { navForRole } from "@/config/nav";
+import { CommandPalette } from "@/features/search/components/CommandPalette";
 import type { SessionUser } from "@/lib/auth/session";
 
 export function AppShell({
@@ -23,6 +24,7 @@ export function AppShell({
         </main>
       </div>
       <BottomNav sections={sections} />
+      <CommandPalette />
     </div>
   );
 }

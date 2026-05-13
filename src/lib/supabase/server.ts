@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
 import type { Database } from "@/types/db";
@@ -13,7 +14,7 @@ type CookiesToSet = { name: string; value: string; options?: CookieOptions }[];
  *
  * Do not import this from Client Components — use `@/lib/supabase/client` instead.
  */
-export async function createSupabaseServerClient() {
+export async function createSupabaseServerClient(): Promise<SupabaseClient<Database>> {
   const cookieStore = await cookies();
 
   return createServerClient<Database>(
@@ -35,5 +36,6 @@ export async function createSupabaseServerClient() {
         },
       },
     },
-  );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ) as unknown as SupabaseClient<Database>;
 }
