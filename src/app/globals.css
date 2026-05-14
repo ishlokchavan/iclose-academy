@@ -4,32 +4,33 @@
 
 @layer base {
   :root {
-    /* Surfaces — Kinetic Precision palette */
-    --background: 0 0% 98%;          /* #FAFAFA */
-    --surface: 0 0% 98%;
-    --surface-subtle: 0 0% 96%;      /* #F5F5F7 */
-    --surface-raised: 0 0% 100%;     /* #FFFFFF */
+    /* Surfaces — Apple palette */
+    --background: 240 5% 96%;          /* #f5f5f7 — Apple signature silver-gray */
+    --surface: 240 5% 96%;
+    --surface-subtle: 240 4% 92%;      /* slightly deeper gray zones */
+    --surface-raised: 0 0% 100%;       /* #ffffff — pure white cards */
 
-    /* Ink — primary and muted text */
-    --foreground: 240 6% 12%;        /* #1d1d1f */
+    /* Ink */
+    --foreground: 240 6% 12%;          /* #1d1d1f */
     --ink: 240 6% 12%;
-    --ink-muted: 240 2% 45%;         /* #6e6e73 */
+    --ink-muted: 240 3% 43%;           /* #6e6e73 */
+    --ink-tertiary: 240 2% 62%;        /* #9a9aa5 */
 
     /* Hairlines */
-    --hairline: 240 5% 91%;          /* #EAEAEA */
+    --hairline: 240 5% 83%;            /* #d2d2d7 — Apple separator */
 
-    /* Accent — electric blue, reserved for interactive */
-    --accent: 211 100% 50%;          /* #0070F3 */
+    /* Accent — Apple blue */
+    --accent: 211 100% 44%;            /* #0071e3 */
     --accent-foreground: 0 0% 100%;
-    --accent-hover: 213 100% 47%;
-    --accent-subtle: 211 100% 96%;
+    --accent-hover: 211 100% 38%;
+    --accent-subtle: 211 100% 95%;
 
     /* Destructive */
-    --destructive: 0 73% 41%;
+    --destructive: 357 73% 45%;
     --destructive-foreground: 0 0% 100%;
 
     /* Sizing tokens */
-    --radius: 0.5rem;
+    --radius: 0.75rem;                  /* 12px — Apple default */
   }
 }
 
@@ -40,6 +41,7 @@
   html {
     -webkit-text-size-adjust: 100%;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
   body {
@@ -47,19 +49,21 @@
     font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
   }
   :focus-visible {
-    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-background;
+    @apply outline-none ring-2 ring-accent/30 ring-offset-2 ring-offset-background;
   }
   ::selection {
-    @apply bg-accent/15 text-foreground;
+    @apply bg-accent/12 text-foreground;
   }
 }
 
 @layer components {
+  /* Eyebrow: small, tight, muted — used sparingly */
   .eyebrow {
-    @apply font-mono uppercase tracking-widest text-eyebrow text-ink-muted;
+    @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-tertiary;
   }
+  /* Display: the editorial headline class */
   .display {
-    @apply font-display tracking-tighter;
+    @apply font-sans tracking-tight;
   }
 }
 

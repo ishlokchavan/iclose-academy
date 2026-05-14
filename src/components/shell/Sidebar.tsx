@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { Brand } from "@/components/shell/Brand";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils/cn";
 import { NAV_ICONS, type NavSection } from "@/config/nav";
 
@@ -15,19 +14,22 @@ export function Sidebar({ sections }: { sections: NavSection[] }) {
     <aside
       className={cn(
         "hidden lg:flex lg:flex-col",
-        "fixed inset-y-0 left-0 w-60 border-r border-hairline bg-surface-raised",
+        /* Apple sidebar: no harsh right border — rely on background contrast */
+        "fixed inset-y-0 left-0 w-60 bg-surface-raised/80 backdrop-blur-xl",
+        "border-r border-hairline/60",
       )}
       aria-label="Primary navigation"
     >
-      <div className="flex h-16 items-center px-5">
+      {/* Brand lockup */}
+      <div className="flex h-[60px] items-center px-5">
         <Brand href="/dashboard" />
       </div>
-      <Separator />
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
+
+      <nav className="flex-1 overflow-y-auto px-3 py-3">
         {sections.map((section, idx) => (
-          <div key={idx} className="mb-6 last:mb-0">
+          <div key={idx} className="mb-5 last:mb-0">
             {section.label ? (
-              <p className="mb-2 px-3 text-eyebrow font-mono uppercase tracking-widest text-ink-muted">
+              <p className="mb-1 px-3 eyebrow text-ink-tertiary">
                 {section.label}
               </p>
             ) : null}
@@ -41,13 +43,19 @@ export function Sidebar({ sections }: { sections: NavSection[] }) {
                       href={item.href}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors duration-200 ease-luxury",
+                        "flex items-center gap-3 rounded-lg px-3 py-2 text-[14px] transition-all duration-150 ease-apple",
                         active
-                          ? "bg-surface-subtle font-medium text-ink"
-                          : "text-ink-muted hover:bg-surface-subtle hover:text-ink",
+                          ? "bg-surface-subtle font-semibold text-ink"
+                          : "text-ink-muted hover:bg-surface-subtle/70 hover:text-ink",
                       )}
                     >
-                      <Icon className="size-4 shrink-0" aria-hidden />
+                      <Icon
+                        className={cn(
+                          "size-[18px] shrink-0 transition-colors",
+                          active ? "text-accent" : "text-ink-muted",
+                        )}
+                        aria-hidden
+                      />
                       <span className="truncate">{item.label}</span>
                     </Link>
                   </li>

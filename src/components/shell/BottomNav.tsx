@@ -18,11 +18,12 @@ export function BottomNav({ sections }: { sections: NavSection[] }) {
       className={cn(
         "lg:hidden",
         "fixed inset-x-0 bottom-0 z-40",
-        "border-t border-hairline bg-surface-raised/95 backdrop-blur",
+        /* Apple tab bar: frosted glass */
+        "border-t border-hairline/60 bg-surface-raised/80 backdrop-blur-xl",
         "pb-[env(safe-area-inset-bottom)]",
       )}
     >
-      <ul className="grid h-16 grid-cols-4">
+      <ul className="grid h-[56px] grid-cols-4">
         {items.map((item) => {
           const active = isActive(pathname, item.href);
           const Icon = NAV_ICONS[item.icon];
@@ -32,15 +33,14 @@ export function BottomNav({ sections }: { sections: NavSection[] }) {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex h-full flex-col items-center justify-center gap-1 text-[11px] transition-colors duration-200 ease-luxury",
-                  active ? "text-ink" : "text-ink-muted hover:text-ink",
+                  "flex h-full flex-col items-center justify-center gap-0.5 transition-all duration-150 ease-apple",
+                  active ? "text-accent" : "text-ink-muted",
                 )}
               >
-                <Icon
-                  className={cn("size-5 shrink-0", active && "text-accent")}
-                  aria-hidden
-                />
-                <span className="truncate px-1">{item.label}</span>
+                <Icon className="size-[22px] shrink-0" aria-hidden />
+                <span className="text-[10px] font-medium truncate px-1">
+                  {item.label}
+                </span>
               </Link>
             </li>
           );

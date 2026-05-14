@@ -15,14 +15,18 @@ export function PageHeader({
 }) {
   return (
     <header className={cn("flex flex-col gap-4 pb-8 sm:flex-row sm:items-end sm:justify-between", className)}>
-      <div className="space-y-2">
-        {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
-        <h1 className="display text-display-lg text-ink">{title}</h1>
+      <div className="space-y-1.5">
+        {eyebrow ? (
+          <p className="eyebrow">{eyebrow}</p>
+        ) : null}
+        <h1 className="text-display-lg font-bold tracking-tighter text-ink">{title}</h1>
         {description ? (
-          <p className="max-w-prose text-base text-ink-muted">{description}</p>
+          <p className="max-w-prose text-[15px] text-ink-muted">{description}</p>
         ) : null}
       </div>
-      {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
+      {actions ? (
+        <div className="flex shrink-0 items-center gap-2">{actions}</div>
+      ) : null}
     </header>
   );
 }
