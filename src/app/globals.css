@@ -77,3 +77,13 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* YouTube IFrame API: make the injected iframe fill its wrapper and block
+   all direct user interaction (we route everything via the YT JS API). */
+.yt-wrapper > iframe {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none;
+}
