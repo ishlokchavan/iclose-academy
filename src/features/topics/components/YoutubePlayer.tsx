@@ -33,6 +33,9 @@ function loadAPI(): Promise<void> {
   if (apiReady) return apiReady;
   apiReady = new Promise((resolve) => {
     if (window.YT?.Player) { resolve(); return; }
+    // YouTube calls this global when the script is ready
+    const prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => { prev?.(); resolve(); };
     const s = document.createElement("script");
     s.src = "https://www.youtube.com/iframe_api";
     document.head.appendChild(s);
