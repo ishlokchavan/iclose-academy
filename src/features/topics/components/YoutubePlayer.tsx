@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Maximize, Minimize, Pause, Play, Volume2, VolumeX } from "lucide-react";
+import { Minimize, Pause, Play, Volume2, VolumeX, Maximize } from "lucide-react";
 
-/* ─── YouTube IFrame API types (minimal) ─────────────────────────────────── */
+/* ─── YouTube IFrame API types ───────────────────────────────────────────── */
 interface YTPlayer {
   playVideo(): void;
   pauseVideo(): void;
@@ -23,7 +23,7 @@ declare global {
   }
 }
 
-/* ─── Singleton API loader — preloaded on mount so it's ready on first tap ── */
+/* ─── Singleton API loader ───────────────────────────────────────────────── */
 let apiReady: Promise<void> | null = null;
 function loadAPI(): Promise<void> {
   if (apiReady) return apiReady;
@@ -52,34 +52,36 @@ export function YoutubePlayer({
   const wrapperRef   = useRef<HTMLDivElement>(null);
   const playerRef    = useRef<YTPlayer | null>(null);
   const tickRef      = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  const hideTimer    = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const [phase,      setPhase]      = useState<"idle" | "loading" | "ready">("idle");
-  const [playing,    setPlaying]    = useState(false);
-  // Start muted — iOS Safari requires a user gesture for audio.
-  // Autoplay works fine muted; user taps the unmute button for sound.
-  const [muted,      setMuted]      = useState(true);
-  const [progress,   setProgress]   = useState(0);
-  const [fakeFs,     setFakeFs]     = useState(false); // CSS fullscreen for iOS
+  const [phase,    setPhase]    = useState<"idle" | "loading" | "ready">("idle");
+  const [playing,  setPlaying]  = useState(false);
+  const [muted,    setMuted]    = useState(true);  // start muted → iOS allows autoplay
+  const [progress, setProgress] = useState(0);
+  const [fakeFs,   setFakeFs]   = useState(false); // CSS fullscreen for iOS
+  const [ctrlsOn,  setCtrlsOn]  = useState(false); // touch-friendly controls toggle
 
   const thumb = thumbUrl ?? `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
 
-  // Preload the YouTube API while the user is reading the page so it's
-  // already resolved when they tap play (avoids an async gap that iOS uses
-  // to block autoplay).
+  // Preload API while user reads the page so tap-to-play is near-instant
   useEffect(() => { loadAPI(); }, []);
+  useEffect(() => () => { clearInterval(tickRef.current); clearTimeout(hideTimer.current); }, []);
 
-  useEffect(() => () => clearInterval(tickRef.current), []);
-
-  // Keep fakeFs in sync with native fullscreen (desktop/Android).
+  // Sync fakeFs with native fullscreen exit (ESC key / browser back)
   useEffect(() => {
-    const onFsChange = () => {
-      if (!document.fullscreenElement) setFakeFs(false);
-    };
+    const onFsChange = () => { if (!document.fullscreenElement) setFakeFs(false); };
     document.addEventListener("fullscreenchange", onFsChange);
     return () => document.removeEventListener("fullscreenchange", onFsChange);
   }, []);
 
-  /* ── Create the YT player ───────────────────────────────────────────────── */
+  /* ── Show controls for 3 s then auto-hide ───────────────────────────────── */
+  const showControls = useCallback(() => {
+    setCtrlsOn(true);
+    clearTimeout(hideTimer.current);
+    hideTimer.current = setTimeout(() => setCtrlsOn(false), 3000);
+  }, []);
+
+  /* ── Build the YT player ────────────────────────────────────────────────── */
   const createPlayer = useCallback(() => {
     if (!wrapperRef.current) return;
     const mount = document.createElement("div");
@@ -93,14 +95,14 @@ export function YoutubePlayer({
       playerVars: {
         autoplay:      1,
         controls:      0,  // hide all YouTube UI
-        mute:          1,  // muted start → iOS allows autoplay
+        mute:          1,  // muted start → iOS autoplay works
         rel:           0,
         modestbranding:1,
         showinfo:      0,
         iv_load_policy:3,
         playsinline:   1,
         disablekb:     1,
-        fs:            0,  // we handle fullscreen ourselves
+        fs:            0,
         origin:        window.location.origin,
       },
       events: {
@@ -131,15 +133,16 @@ export function YoutubePlayer({
 
   const launch = useCallback(async () => {
     setPhase("loading");
-    await loadAPI(); // resolves instantly if preloaded on mount
+    await loadAPI();
     createPlayer();
   }, [createPlayer]);
 
-  /* ── Playback controls ───────────────────────────────────────────────────── */
+  /* ── Controls ────────────────────────────────────────────────────────────── */
   function togglePlay() {
     const p = playerRef.current;
     if (!p) return;
     playing ? p.pauseVideo() : p.playVideo();
+    showControls();
   }
 
   function toggleMute() {
@@ -155,29 +158,41 @@ export function YoutubePlayer({
     const rect = e.currentTarget.getBoundingClientRect();
     const pct  = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     p.seekTo(pct * p.getDuration(), true);
+    showControls();
   }
 
-  /* ── Fullscreen — native where available, CSS fake-fullscreen on iOS ────── */
-  function toggleFullscreen() {
+  /* ── Tap handler: first tap shows controls; second tap (while visible) plays/pauses */
+  function handleOverlayTap() {
+    if (ctrlsOn) {
+      togglePlay();
+    } else {
+      showControls();
+    }
+  }
+
+  /* ── Fullscreen ──────────────────────────────────────────────────────────── */
+  function enterFullscreen() {
     const el = containerRef.current;
     if (!el) return;
-
-    // Native fullscreen (works on Android Chrome + desktop)
-    if (document.fullscreenEnabled) {
-      if (document.fullscreenElement) {
-        document.exitFullscreen();
-      } else {
-        el.requestFullscreen();
-        setFakeFs(true);
-      }
-      return;
+    if (document.fullscreenEnabled && !document.fullscreenElement) {
+      el.requestFullscreen().then(() => setFakeFs(true)).catch(() => setFakeFs(true));
+    } else {
+      // iOS / Safari PWA: CSS full-viewport overlay
+      setFakeFs(true);
     }
-
-    // iOS PWA fallback: CSS-based full-viewport overlay
-    setFakeFs((prev) => !prev);
+    showControls();
   }
 
-  /* ── Idle: thumbnail + play button ─────────────────────────────────────── */
+  function exitFullscreen() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().finally(() => setFakeFs(false));
+    } else {
+      setFakeFs(false);
+    }
+    showControls();
+  }
+
+  /* ── Idle ────────────────────────────────────────────────────────────────── */
   if (phase === "idle") {
     return (
       <button
@@ -202,21 +217,22 @@ export function YoutubePlayer({
     );
   }
 
-  /* ── Loading + ready ────────────────────────────────────────────────────── */
+  /* ── Player ──────────────────────────────────────────────────────────────── */
+  const isFullscreen = fakeFs;
+
   return (
     <div
       ref={containerRef}
-      // fakeFs: fixed overlay that fills the entire viewport on iOS
       className={
-        fakeFs
-          ? "fixed inset-0 z-[9999] bg-black"
-          : "player-root group/player relative aspect-video w-full overflow-hidden bg-black"
+        isFullscreen
+          ? "fixed inset-0 z-[9999] bg-black"          // full-viewport on iOS PWA
+          : "relative aspect-video w-full overflow-hidden bg-black"
       }
     >
       {/* YouTube iframe mounts here */}
       <div ref={wrapperRef} className="yt-wrapper absolute inset-0" />
 
-      {/* Loading overlay — thumbnail + spinner until player is ready */}
+      {/* Loading overlay */}
       {phase === "loading" && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black">
           <Image src={thumb} alt="" fill className="object-cover opacity-40" />
@@ -224,30 +240,41 @@ export function YoutubePlayer({
         </div>
       )}
 
-      {/* Full-cover transparent zone: every tap goes through our handlers,
-          nothing reaches the YouTube iframe. */}
-      <div
-        className="absolute inset-0 z-10 cursor-pointer"
-        onClick={togglePlay}
-        onDoubleClick={toggleFullscreen}
-      />
-
-      {/* Tap-to-unmute prompt — shown until user explicitly unmutes.
-          Positioned top-right so it's obvious without blocking content. */}
+      {/* Tap-to-unmute prompt */}
       {phase === "ready" && muted && (
         <button
           type="button"
-          onClick={(e) => { e.stopPropagation(); toggleMute(); }}
-          className="absolute right-3 top-3 z-30 flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur-sm transition-opacity hover:bg-black/80"
-          aria-label="Tap to unmute"
+          onClick={(e) => { e.stopPropagation(); toggleMute(); showControls(); }}
+          className="absolute right-3 top-3 z-40 flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur-sm"
         >
           <VolumeX className="size-3.5" />
           Tap to unmute
         </button>
       )}
 
-      {/* Custom controls */}
-      <div className="absolute inset-x-0 bottom-0 z-30 translate-y-1 bg-gradient-to-t from-black/80 via-black/30 to-transparent px-4 pb-3 pt-12 opacity-0 transition-all duration-200 group-hover/player:translate-y-0 group-hover/player:opacity-100">
+      {/* Transparent click zone — blocks all YouTube interactions */}
+      <div
+        className="absolute inset-0 z-10 cursor-pointer"
+        onClick={handleOverlayTap}
+      />
+
+      {/* ── Center play/pause indicator (shown when controls are visible) ── */}
+      {ctrlsOn && phase === "ready" && (
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+          <div className="flex size-16 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm">
+            {playing
+              ? <Pause className="size-7 fill-white text-white" />
+              : <Play  className="size-7 translate-x-0.5 fill-white text-white" />}
+          </div>
+        </div>
+      )}
+
+      {/* ── Bottom controls bar ── always touchable, fades in/out ────────── */}
+      <div
+        className={`absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/80 via-black/30 to-transparent px-4 pb-3 pt-12 transition-opacity duration-200 ${
+          ctrlsOn || isFullscreen ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+      >
         {/* Seek bar */}
         <div
           role="slider"
@@ -256,11 +283,11 @@ export function YoutubePlayer({
           aria-valuemin={0}
           aria-valuemax={100}
           tabIndex={0}
-          className="mb-3 h-1 w-full cursor-pointer rounded-full bg-white/25 hover:h-[5px] transition-all"
+          className="mb-3 h-1.5 w-full cursor-pointer rounded-full bg-white/25"
           onClick={seek}
         >
           <div
-            className="pointer-events-none h-full rounded-full bg-white"
+            className="pointer-events-none h-full rounded-full bg-white transition-all duration-300"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -270,7 +297,7 @@ export function YoutubePlayer({
             type="button"
             aria-label={playing ? "Pause" : "Play"}
             onClick={(e) => { e.stopPropagation(); togglePlay(); }}
-            className="flex size-9 items-center justify-center rounded-md text-white/80 transition-colors hover:text-white"
+            className="flex size-10 items-center justify-center rounded-md text-white/90 transition-colors hover:text-white"
           >
             {playing
               ? <Pause className="size-5 fill-current" />
@@ -280,34 +307,43 @@ export function YoutubePlayer({
           <button
             type="button"
             aria-label={muted ? "Unmute" : "Mute"}
-            onClick={(e) => { e.stopPropagation(); toggleMute(); }}
-            className="flex size-9 items-center justify-center rounded-md text-white/80 transition-colors hover:text-white"
+            onClick={(e) => { e.stopPropagation(); toggleMute(); showControls(); }}
+            className="flex size-10 items-center justify-center rounded-md text-white/90 transition-colors hover:text-white"
           >
             {muted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
           </button>
 
           <span className="flex-1" />
 
-          <button
-            type="button"
-            aria-label={fakeFs ? "Exit fullscreen" : "Fullscreen"}
-            onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
-            className="flex size-9 items-center justify-center rounded-md text-white/80 transition-colors hover:text-white"
-          >
-            {fakeFs
-              ? <Minimize className="size-5" />
-              : <Maximize className="size-5" />}
-          </button>
+          {isFullscreen ? (
+            <button
+              type="button"
+              aria-label="Exit fullscreen"
+              onClick={(e) => { e.stopPropagation(); exitFullscreen(); }}
+              className="flex size-10 items-center justify-center rounded-md text-white/90 transition-colors hover:text-white"
+            >
+              <Minimize className="size-5" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              aria-label="Fullscreen"
+              onClick={(e) => { e.stopPropagation(); enterFullscreen(); }}
+              className="flex size-10 items-center justify-center rounded-md text-white/90 transition-colors hover:text-white"
+            >
+              <Maximize className="size-5" />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* iOS fake-fullscreen needs always-visible exit since controls require hover */}
-      {fakeFs && !document.fullscreenElement && (
+      {/* ── Persistent exit button — top-left, always visible in fullscreen ── */}
+      {isFullscreen && (
         <button
           type="button"
           aria-label="Exit fullscreen"
-          onClick={(e) => { e.stopPropagation(); setFakeFs(false); }}
-          className="absolute left-3 top-3 z-40 flex size-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm"
+          onClick={(e) => { e.stopPropagation(); exitFullscreen(); }}
+          className="absolute left-3 top-3 z-40 flex size-10 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm"
         >
           <Minimize className="size-5" />
         </button>
