@@ -11,7 +11,6 @@ export const metadata: Metadata = { title: "Users · Staff" };
 export default async function StaffUsersPage() {
   const user = await requireUser();
   if (user.role !== "admin") redirect("/staff");
-
   const users = await getAllUsers();
 
   return (
@@ -19,7 +18,7 @@ export default async function StaffUsersPage() {
       <PageHeader
         eyebrow="Admin"
         title="Users"
-        description="All registered accounts. Promote learners to educators, or grant staff access."
+        description="Promote learners to educators, or grant staff access."
       />
 
       <div className="overflow-hidden rounded-lg border border-hairline bg-surface-raised">

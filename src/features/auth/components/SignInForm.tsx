@@ -58,7 +58,7 @@ export function SignInForm({ next }: { next?: string }) {
 
       {mode === "password" ? (
         <form action={pwAction} className="space-y-4" noValidate>
-          <input type="hidden" name="next" value={next ?? "/dashboard"} />
+          <input type="hidden" name="next" value={next ?? "/topics"} />
           <Field label="Email" name="email" type="email" autoComplete="email" required />
           <Field
             label="Password"
@@ -74,7 +74,7 @@ export function SignInForm({ next }: { next?: string }) {
         </form>
       ) : (
         <form action={otpAction} className="space-y-4" noValidate>
-          <input type="hidden" name="next" value={next ?? "/dashboard"} />
+          <input type="hidden" name="next" value={next ?? "/topics"} />
           <Field label="Email" name="email" type="email" autoComplete="email" required />
           {otpState?.error ? <FieldError>{otpState.error}</FieldError> : null}
           <Button type="submit" className="w-full" size="lg" disabled={otpPending}>

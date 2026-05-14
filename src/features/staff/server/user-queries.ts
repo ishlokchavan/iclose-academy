@@ -15,14 +15,10 @@ export type StaffUserRow = {
 export async function getAllUsers(): Promise<StaffUserRow[]> {
   const supabase = await createSupabaseServerClient();
 
-  // profiles has all the role/name data; emails live on auth.users which we
-  // can't read directly. We expose them via the read-only `user_emails` view
-  // (staff-only RLS). If that view doesn't exist yet, gracefully degrade.
   const { data: profiles } = await supabase
     .from("profiles")
     .select("id, full_name, avatar_url, role, created_at")
     .order("created_at", { ascending: false });
-
   if (!profiles?.length) return [];
 
   let emailMap: Record<string, string | null> = {};
@@ -47,4 +43,9 @@ export async function getAllUsers(): Promise<StaffUserRow[]> {
     email: emailMap[p.id] ?? null,
     created_at: p.created_at,
   }));
+}
+
+export async function getEducators(): Promise<StaffUserRow[]> {
+  const all = await getAllUsers();
+  return all.filter((u) => u.role !== "learner");
 }

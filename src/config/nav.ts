@@ -1,70 +1,75 @@
 import {
-  BookOpen,
+  Bookmark,
   CircleUserRound,
-  Compass,
-  Gauge,
   GraduationCap,
-  LayoutDashboard,
+  Inbox,
+  LayoutGrid,
   Library,
-  type LucideIcon,
+  MessageSquarePlus,
+  Send,
   Settings,
   ShieldCheck,
   Sparkles,
+  Tags,
   Users,
+  type LucideIcon,
 } from "lucide-react";
 
 import type { AppRole } from "@/lib/auth/session";
 
 export type NavIconName =
-  | "gauge"
   | "library"
-  | "sparkles"
-  | "book-open"
+  | "bookmark"
   | "user"
-  | "dashboard"
-  | "graduation"
-  | "compass"
+  | "inbox"
+  | "send"
+  | "grid"
+  | "tags"
   | "users"
-  | "settings";
+  | "settings"
+  | "shield"
+  | "graduation"
+  | "sparkles"
+  | "message-plus";
 
 export const NAV_ICONS: Record<NavIconName, LucideIcon> = {
-  gauge: Gauge,
   library: Library,
-  sparkles: Sparkles,
-  "book-open": BookOpen,
+  bookmark: Bookmark,
   user: CircleUserRound,
-  dashboard: LayoutDashboard,
-  graduation: GraduationCap,
-  compass: Compass,
+  inbox: Inbox,
+  send: Send,
+  grid: LayoutGrid,
+  tags: Tags,
   users: Users,
   settings: Settings,
+  shield: ShieldCheck,
+  graduation: GraduationCap,
+  sparkles: Sparkles,
+  "message-plus": MessageSquarePlus,
 };
 
 export type NavItem = {
   label: string;
   href: string;
   icon: NavIconName;
-  /** Show this item in the mobile bottom nav (in addition to the sidebar). */
+  /** Show this item in the mobile bottom nav. */
   mobile?: boolean;
 };
 
-export type NavSection = {
-  label?: string;
-  items: NavItem[];
-};
+export type NavSection = { label?: string; items: NavItem[] };
 
 export const LEARNER_NAV: NavSection[] = [
   {
     items: [
-      { label: "Dashboard", href: "/dashboard", icon: "gauge", mobile: true },
-      { label: "Library", href: "/tracks", icon: "library", mobile: true },
-      { label: "Progress", href: "/progress", icon: "sparkles", mobile: true },
+      { label: "Library", href: "/topics", icon: "library", mobile: true },
+      { label: "Post inquiry", href: "/inquiries/new", icon: "message-plus", mobile: true },
+      { label: "My inquiries", href: "/inquiries", icon: "inbox", mobile: true },
     ],
   },
   {
     label: "Account",
     items: [
-      { label: "Saved", href: "/saved", icon: "book-open" },
+      { label: "Saved", href: "/saved", icon: "bookmark" },
       { label: "Profile", href: "/profile", icon: "user", mobile: true },
     ],
   },
@@ -73,9 +78,8 @@ export const LEARNER_NAV: NavSection[] = [
 export const EDUCATOR_NAV: NavSection[] = [
   {
     items: [
-      { label: "Dashboard", href: "/educator", icon: "dashboard", mobile: true },
-      { label: "My tracks", href: "/educator/tracks", icon: "graduation", mobile: true },
-      { label: "Analytics", href: "/educator/analytics", icon: "sparkles", mobile: true },
+      { label: "My topics", href: "/educator", icon: "grid", mobile: true },
+      { label: "Inquiries", href: "/educator/inquiries", icon: "inbox", mobile: true },
     ],
   },
   {
@@ -87,17 +91,16 @@ export const EDUCATOR_NAV: NavSection[] = [
 export const STAFF_NAV: NavSection[] = [
   {
     items: [
-      { label: "Overview", href: "/staff", icon: "dashboard", mobile: true },
-      { label: "Educators", href: "/staff/educators", icon: "graduation", mobile: true },
-      { label: "Tracks", href: "/staff/tracks", icon: "library", mobile: true },
-      { label: "Taxonomies", href: "/staff/taxonomies", icon: "compass" },
+      { label: "Overview", href: "/staff", icon: "grid", mobile: true },
+      { label: "Topics", href: "/staff/topics", icon: "library", mobile: true },
+      { label: "Inquiries", href: "/staff/inquiries", icon: "inbox", mobile: true },
     ],
   },
   {
-    label: "Admin only",
+    label: "Configuration",
     items: [
+      { label: "Taxonomy", href: "/staff/taxonomy", icon: "tags" },
       { label: "Users", href: "/staff/users", icon: "users" },
-      { label: "Settings", href: "/staff/settings", icon: "settings" },
     ],
   },
 ];
@@ -115,7 +118,7 @@ export function navForRole(role: AppRole): NavSection[] {
 }
 
 export const ROLE_LANDING: Record<AppRole, string> = {
-  learner: "/dashboard",
+  learner: "/topics",
   educator: "/educator",
   content_manager: "/staff",
   admin: "/staff",

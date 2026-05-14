@@ -15,7 +15,7 @@ export type ActionState = { error?: string; success?: string; nextEmail?: string
 
 const safeNext = (raw: FormDataEntryValue | null) => {
   const value = typeof raw === "string" ? raw : "";
-  return value.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
+  return value.startsWith("/") && !value.startsWith("//") ? value : "/topics";
 };
 
 // ----------------------------------------------------------------------------

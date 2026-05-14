@@ -1,7 +1,8 @@
 // =============================================================================
 // AUTO-GENERATED — do not edit by hand.
-// Regenerate with: pnpm db:types  (which calls `supabase gen types typescript`)
-// or via the Supabase MCP `generate_typescript_types` tool.
+// Regenerate with: pnpm db:types  (or via the Supabase MCP `generate_typescript_types`).
+// `__InternalSupabase` is intentionally stripped — see src/lib/supabase/{server,client}.ts
+// for the cast back to SupabaseClient<Database> (compat with @supabase/ssr@0.5.2).
 // =============================================================================
 
 export type Json =
@@ -15,92 +16,235 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      enrollments: {
+      areas: {
         Row: {
-          completed_at: string | null;
-          enrolled_at: string;
+          archived_at: string | null;
+          created_at: string;
+          description: string | null;
+          educator_id: string | null;
           id: string;
-          status: Database["public"]["Enums"]["enrollment_status"];
-          track_id: string;
-          user_id: string;
+          name: string;
+          slug: string;
+          sort_order: number;
+          updated_at: string;
         };
         Insert: {
-          completed_at?: string | null;
-          enrolled_at?: string;
+          archived_at?: string | null;
+          created_at?: string;
+          description?: string | null;
+          educator_id?: string | null;
           id?: string;
-          status?: Database["public"]["Enums"]["enrollment_status"];
-          track_id: string;
-          user_id: string;
+          name: string;
+          slug: string;
+          sort_order?: number;
+          updated_at?: string;
         };
         Update: {
-          completed_at?: string | null;
-          enrolled_at?: string;
+          archived_at?: string | null;
+          created_at?: string;
+          description?: string | null;
+          educator_id?: string | null;
           id?: string;
-          status?: Database["public"]["Enums"]["enrollment_status"];
-          track_id?: string;
-          user_id?: string;
+          name?: string;
+          slug?: string;
+          sort_order?: number;
+          updated_at?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "enrollments_track_id_fkey";
-            columns: ["track_id"];
-            isOneToOne: false;
-            referencedRelation: "tracks";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "enrollments_user_id_fkey";
-            columns: ["user_id"];
+            foreignKeyName: "areas_educator_id_fkey";
+            columns: ["educator_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
       };
-      entitlements: {
+      inquiries: {
         Row: {
-          expires_at: string | null;
-          granted_at: string;
+          area_id: string | null;
+          assigned_educator_id: string | null;
+          created_at: string;
+          description: string;
+          email: string;
           id: string;
-          source_id: string | null;
-          source_type: string;
-          user_id: string;
+          learner_id: string;
+          phone: string | null;
+          resolved_at: string | null;
+          source_topic_id: string | null;
+          status: Database["public"]["Enums"]["inquiry_status"];
+          subarea: string | null;
+          type_id: string | null;
+          updated_at: string;
         };
         Insert: {
-          expires_at?: string | null;
-          granted_at?: string;
+          area_id?: string | null;
+          assigned_educator_id?: string | null;
+          created_at?: string;
+          description: string;
+          email: string;
           id?: string;
-          source_id?: string | null;
-          source_type: string;
-          user_id: string;
+          learner_id: string;
+          phone?: string | null;
+          resolved_at?: string | null;
+          source_topic_id?: string | null;
+          status?: Database["public"]["Enums"]["inquiry_status"];
+          subarea?: string | null;
+          type_id?: string | null;
+          updated_at?: string;
         };
         Update: {
-          expires_at?: string | null;
-          granted_at?: string;
+          area_id?: string | null;
+          assigned_educator_id?: string | null;
+          created_at?: string;
+          description?: string;
+          email?: string;
           id?: string;
-          source_id?: string | null;
-          source_type?: string;
-          user_id?: string;
+          learner_id?: string;
+          phone?: string | null;
+          resolved_at?: string | null;
+          source_topic_id?: string | null;
+          status?: Database["public"]["Enums"]["inquiry_status"];
+          subarea?: string | null;
+          type_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      inquiry_subtypes: {
+        Row: { inquiry_id: string; subtype_id: string };
+        Insert: { inquiry_id: string; subtype_id: string };
+        Update: { inquiry_id?: string; subtype_id?: string };
+        Relationships: [];
+      };
+      profiles: {
+        Row: {
+          avatar_url: string | null;
+          bio: string | null;
+          created_at: string;
+          full_name: string | null;
+          headline: string | null;
+          id: string;
+          role: Database["public"]["Enums"]["app_role"];
+          updated_at: string;
+        };
+        Insert: {
+          avatar_url?: string | null;
+          bio?: string | null;
+          created_at?: string;
+          full_name?: string | null;
+          headline?: string | null;
+          id: string;
+          role?: Database["public"]["Enums"]["app_role"];
+          updated_at?: string;
+        };
+        Update: {
+          avatar_url?: string | null;
+          bio?: string | null;
+          created_at?: string;
+          full_name?: string | null;
+          headline?: string | null;
+          id?: string;
+          role?: Database["public"]["Enums"]["app_role"];
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      property_subtypes: {
+        Row: {
+          archived_at: string | null;
+          created_at: string;
+          id: string;
+          name: string;
+          slug: string;
+          sort_order: number;
+          type_id: string;
+        };
+        Insert: {
+          archived_at?: string | null;
+          created_at?: string;
+          id?: string;
+          name: string;
+          slug: string;
+          sort_order?: number;
+          type_id: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          slug?: string;
+          sort_order?: number;
+          type_id?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "entitlements_user_id_fkey";
-            columns: ["user_id"];
+            foreignKeyName: "property_subtypes_type_id_fkey";
+            columns: ["type_id"];
             isOneToOne: false;
-            referencedRelation: "profiles";
+            referencedRelation: "property_types";
             referencedColumns: ["id"];
           },
         ];
       };
-      lesson_resources: {
+      property_types: {
+        Row: {
+          archived_at: string | null;
+          created_at: string;
+          id: string;
+          name: string;
+          slug: string;
+          sort_order: number;
+        };
+        Insert: {
+          archived_at?: string | null;
+          created_at?: string;
+          id?: string;
+          name: string;
+          slug: string;
+          sort_order?: number;
+        };
+        Update: {
+          archived_at?: string | null;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          slug?: string;
+          sort_order?: number;
+        };
+        Relationships: [];
+      };
+      saved_items: {
+        Row: {
+          created_at: string;
+          entity_id: string;
+          entity_type: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          entity_id: string;
+          entity_type: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          entity_id?: string;
+          entity_type?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      topic_resources: {
         Row: {
           created_at: string;
           id: string;
           kind: string;
           label: string;
-          lesson_id: string;
           sort_order: number;
           storage_path: string | null;
+          topic_id: string;
           url: string | null;
         };
         Insert: {
@@ -108,9 +252,9 @@ export type Database = {
           id?: string;
           kind?: string;
           label: string;
-          lesson_id: string;
           sort_order?: number;
           storage_path?: string | null;
+          topic_id: string;
           url?: string | null;
         };
         Update: {
@@ -118,142 +262,78 @@ export type Database = {
           id?: string;
           kind?: string;
           label?: string;
-          lesson_id?: string;
           sort_order?: number;
           storage_path?: string | null;
+          topic_id?: string;
           url?: string | null;
         };
         Relationships: [
           {
-            foreignKeyName: "lesson_resources_lesson_id_fkey";
-            columns: ["lesson_id"];
+            foreignKeyName: "topic_resources_topic_id_fkey";
+            columns: ["topic_id"];
             isOneToOne: false;
-            referencedRelation: "lessons";
+            referencedRelation: "topics";
             referencedColumns: ["id"];
           },
         ];
       };
-      lessons: {
+      topic_subtypes: {
+        Row: { subtype_id: string; topic_id: string };
+        Insert: { subtype_id: string; topic_id: string };
+        Update: { subtype_id?: string; topic_id?: string };
+        Relationships: [];
+      };
+      topics: {
         Row: {
-          chapters: Json;
+          archived_at: string | null;
+          area_id: string | null;
+          cover_url: string | null;
           created_at: string;
-          duration_seconds: number | null;
+          description: string | null;
+          educator_id: string;
           id: string;
-          is_preview: boolean;
-          module_id: string;
-          position: number;
-          summary: string | null;
+          published_at: string | null;
+          slug: string;
+          status: Database["public"]["Enums"]["topic_status"];
+          subarea: string | null;
           title: string;
+          type_id: string | null;
           updated_at: string;
           youtube_id: string | null;
         };
         Insert: {
-          chapters?: Json;
+          archived_at?: string | null;
+          area_id?: string | null;
+          cover_url?: string | null;
           created_at?: string;
-          duration_seconds?: number | null;
+          description?: string | null;
+          educator_id: string;
           id?: string;
-          is_preview?: boolean;
-          module_id: string;
-          position: number;
-          summary?: string | null;
+          published_at?: string | null;
+          slug: string;
+          status?: Database["public"]["Enums"]["topic_status"];
+          subarea?: string | null;
           title: string;
+          type_id?: string | null;
           updated_at?: string;
           youtube_id?: string | null;
         };
         Update: {
-          chapters?: Json;
-          created_at?: string;
-          duration_seconds?: number | null;
-          id?: string;
-          is_preview?: boolean;
-          module_id?: string;
-          position?: number;
-          summary?: string | null;
-          title?: string;
-          updated_at?: string;
-          youtube_id?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "lessons_module_id_fkey";
-            columns: ["module_id"];
-            isOneToOne: false;
-            referencedRelation: "modules";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      modules: {
-        Row: {
-          created_at: string;
-          id: string;
-          position: number;
-          summary: string | null;
-          title: string;
-          track_id: string;
-          updated_at: string;
-        };
-        Insert: {
-          created_at?: string;
-          id?: string;
-          position: number;
-          summary?: string | null;
-          title: string;
-          track_id: string;
-          updated_at?: string;
-        };
-        Update: {
-          created_at?: string;
-          id?: string;
-          position?: number;
-          summary?: string | null;
-          title?: string;
-          track_id?: string;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "modules_track_id_fkey";
-            columns: ["track_id"];
-            isOneToOne: false;
-            referencedRelation: "tracks";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      plans: {
-        Row: {
-          created_at: string;
-          description: string | null;
-          id: string;
-          is_active: boolean;
-          monthly_price_cents: number | null;
-          name: string;
-          slug: string;
-          updated_at: string;
-          yearly_price_cents: number | null;
-        };
-        Insert: {
+          archived_at?: string | null;
+          area_id?: string | null;
+          cover_url?: string | null;
           created_at?: string;
           description?: string | null;
+          educator_id?: string;
           id?: string;
-          is_active?: boolean;
-          monthly_price_cents?: number | null;
-          name: string;
-          slug: string;
-          updated_at?: string;
-          yearly_price_cents?: number | null;
-        };
-        Update: {
-          created_at?: string;
-          description?: string | null;
-          id?: string;
-          is_active?: boolean;
-          monthly_price_cents?: number | null;
-          name?: string;
+          published_at?: string | null;
           slug?: string;
+          status?: Database["public"]["Enums"]["topic_status"];
+          subarea?: string | null;
+          title?: string;
+          type_id?: string | null;
           updated_at?: string;
-          yearly_price_cents?: number | null;
+          youtube_id?: string | null;
         };
         Relationships: [];
       };
@@ -281,496 +361,36 @@ export type Database = {
         };
         Relationships: [];
       };
-      profiles: {
-        Row: {
-          avatar_url: string | null;
-          bio: string | null;
-          created_at: string;
-          full_name: string | null;
-          headline: string | null;
-          id: string;
-          role: Database["public"]["Enums"]["app_role"];
-          specialty_id: string | null;
-          updated_at: string;
-        };
-        Insert: {
-          avatar_url?: string | null;
-          bio?: string | null;
-          created_at?: string;
-          full_name?: string | null;
-          headline?: string | null;
-          id: string;
-          role?: Database["public"]["Enums"]["app_role"];
-          specialty_id?: string | null;
-          updated_at?: string;
-        };
-        Update: {
-          avatar_url?: string | null;
-          bio?: string | null;
-          created_at?: string;
-          full_name?: string | null;
-          headline?: string | null;
-          id?: string;
-          role?: Database["public"]["Enums"]["app_role"];
-          specialty_id?: string | null;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "profiles_specialty_fk";
-            columns: ["specialty_id"];
-            isOneToOne: false;
-            referencedRelation: "specialties";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      progress: {
-        Row: {
-          completed_at: string | null;
-          id: string;
-          lesson_id: string;
-          position_seconds: number;
-          updated_at: string;
-          user_id: string;
-        };
-        Insert: {
-          completed_at?: string | null;
-          id?: string;
-          lesson_id: string;
-          position_seconds?: number;
-          updated_at?: string;
-          user_id: string;
-        };
-        Update: {
-          completed_at?: string | null;
-          id?: string;
-          lesson_id?: string;
-          position_seconds?: number;
-          updated_at?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "progress_lesson_id_fkey";
-            columns: ["lesson_id"];
-            isOneToOne: false;
-            referencedRelation: "lessons";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "progress_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      reviews: {
-        Row: {
-          body: string | null;
-          created_at: string;
-          id: string;
-          rating: number;
-          track_id: string;
-          updated_at: string;
-          user_id: string;
-        };
-        Insert: {
-          body?: string | null;
-          created_at?: string;
-          id?: string;
-          rating: number;
-          track_id: string;
-          updated_at?: string;
-          user_id: string;
-        };
-        Update: {
-          body?: string | null;
-          created_at?: string;
-          id?: string;
-          rating?: number;
-          track_id?: string;
-          updated_at?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "reviews_track_id_fkey";
-            columns: ["track_id"];
-            isOneToOne: false;
-            referencedRelation: "tracks";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "reviews_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      saved_items: {
-        Row: {
-          created_at: string;
-          entity_id: string;
-          entity_type: string;
-          user_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          entity_id: string;
-          entity_type: string;
-          user_id: string;
-        };
-        Update: {
-          created_at?: string;
-          entity_id?: string;
-          entity_type?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "saved_items_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      search_documents: {
-        Row: {
-          body: string | null;
-          entity_id: string;
-          entity_type: string;
-          level_id: string | null;
-          search_vec: unknown;
-          specialty_id: string | null;
-          title: string;
-          updated_at: string;
-        };
-        Insert: {
-          body?: string | null;
-          entity_id: string;
-          entity_type: string;
-          level_id?: string | null;
-          search_vec?: unknown;
-          specialty_id?: string | null;
-          title: string;
-          updated_at?: string;
-        };
-        Update: {
-          body?: string | null;
-          entity_id?: string;
-          entity_type?: string;
-          level_id?: string | null;
-          search_vec?: unknown;
-          specialty_id?: string | null;
-          title?: string;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "search_documents_level_id_fkey";
-            columns: ["level_id"];
-            isOneToOne: false;
-            referencedRelation: "track_levels";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "search_documents_specialty_id_fkey";
-            columns: ["specialty_id"];
-            isOneToOne: false;
-            referencedRelation: "specialties";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      specialties: {
-        Row: {
-          archived_at: string | null;
-          created_at: string;
-          description: string | null;
-          icon: string | null;
-          id: string;
-          name: string;
-          slug: string;
-          sort_order: number;
-          updated_at: string;
-        };
-        Insert: {
-          archived_at?: string | null;
-          created_at?: string;
-          description?: string | null;
-          icon?: string | null;
-          id?: string;
-          name: string;
-          slug: string;
-          sort_order?: number;
-          updated_at?: string;
-        };
-        Update: {
-          archived_at?: string | null;
-          created_at?: string;
-          description?: string | null;
-          icon?: string | null;
-          id?: string;
-          name?: string;
-          slug?: string;
-          sort_order?: number;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      tags: {
-        Row: {
-          created_at: string;
-          id: string;
-          name: string;
-          slug: string;
-        };
-        Insert: {
-          created_at?: string;
-          id?: string;
-          name: string;
-          slug: string;
-        };
-        Update: {
-          created_at?: string;
-          id?: string;
-          name?: string;
-          slug?: string;
-        };
-        Relationships: [];
-      };
-      track_categories: {
-        Row: {
-          archived_at: string | null;
-          created_at: string;
-          id: string;
-          name: string;
-          parent_id: string | null;
-          slug: string;
-          sort_order: number;
-          updated_at: string;
-        };
-        Insert: {
-          archived_at?: string | null;
-          created_at?: string;
-          id?: string;
-          name: string;
-          parent_id?: string | null;
-          slug: string;
-          sort_order?: number;
-          updated_at?: string;
-        };
-        Update: {
-          archived_at?: string | null;
-          created_at?: string;
-          id?: string;
-          name?: string;
-          parent_id?: string | null;
-          slug?: string;
-          sort_order?: number;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "track_categories_parent_id_fkey";
-            columns: ["parent_id"];
-            isOneToOne: false;
-            referencedRelation: "track_categories";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      track_levels: {
-        Row: {
-          archived_at: string | null;
-          created_at: string;
-          id: string;
-          name: string;
-          slug: string;
-          sort_order: number;
-          updated_at: string;
-        };
-        Insert: {
-          archived_at?: string | null;
-          created_at?: string;
-          id?: string;
-          name: string;
-          slug: string;
-          sort_order?: number;
-          updated_at?: string;
-        };
-        Update: {
-          archived_at?: string | null;
-          created_at?: string;
-          id?: string;
-          name?: string;
-          slug?: string;
-          sort_order?: number;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      track_tags: {
-        Row: {
-          tag_id: string;
-          track_id: string;
-        };
-        Insert: {
-          tag_id: string;
-          track_id: string;
-        };
-        Update: {
-          tag_id?: string;
-          track_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "track_tags_tag_id_fkey";
-            columns: ["tag_id"];
-            isOneToOne: false;
-            referencedRelation: "tags";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "track_tags_track_id_fkey";
-            columns: ["track_id"];
-            isOneToOne: false;
-            referencedRelation: "tracks";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      tracks: {
-        Row: {
-          archived_at: string | null;
-          category_id: string | null;
-          cover_url: string | null;
-          created_at: string;
-          description: string | null;
-          duration_minutes: number | null;
-          educator_id: string;
-          hero_url: string | null;
-          id: string;
-          level_id: string | null;
-          outcomes: Json;
-          prerequisites: Json;
-          published_at: string | null;
-          slug: string;
-          specialty_id: string | null;
-          status: Database["public"]["Enums"]["track_status"];
-          subtitle: string | null;
-          summary: string | null;
-          title: string;
-          updated_at: string;
-        };
-        Insert: {
-          archived_at?: string | null;
-          category_id?: string | null;
-          cover_url?: string | null;
-          created_at?: string;
-          description?: string | null;
-          duration_minutes?: number | null;
-          educator_id: string;
-          hero_url?: string | null;
-          id?: string;
-          level_id?: string | null;
-          outcomes?: Json;
-          prerequisites?: Json;
-          published_at?: string | null;
-          slug: string;
-          specialty_id?: string | null;
-          status?: Database["public"]["Enums"]["track_status"];
-          subtitle?: string | null;
-          summary?: string | null;
-          title: string;
-          updated_at?: string;
-        };
-        Update: {
-          archived_at?: string | null;
-          category_id?: string | null;
-          cover_url?: string | null;
-          created_at?: string;
-          description?: string | null;
-          duration_minutes?: number | null;
-          educator_id?: string;
-          hero_url?: string | null;
-          id?: string;
-          level_id?: string | null;
-          outcomes?: Json;
-          prerequisites?: Json;
-          published_at?: string | null;
-          slug?: string;
-          specialty_id?: string | null;
-          status?: Database["public"]["Enums"]["track_status"];
-          subtitle?: string | null;
-          summary?: string | null;
-          title?: string;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "tracks_category_id_fkey";
-            columns: ["category_id"];
-            isOneToOne: false;
-            referencedRelation: "track_categories";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "tracks_educator_id_fkey";
-            columns: ["educator_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "tracks_level_id_fkey";
-            columns: ["level_id"];
-            isOneToOne: false;
-            referencedRelation: "track_levels";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "tracks_specialty_id_fkey";
-            columns: ["specialty_id"];
-            isOneToOne: false;
-            referencedRelation: "specialties";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
     };
     Views: {
-      [_ in never]: never;
+      user_emails: {
+        Row: { email: string | null; id: string | null };
+        Insert: { email?: string | null; id?: string | null };
+        Update: { email?: string | null; id?: string | null };
+        Relationships: [];
+      };
     };
     Functions: {
       current_user_role: { Args: never; Returns: string };
       is_admin: { Args: never; Returns: boolean };
       is_staff: { Args: never; Returns: boolean };
+      set_app_metadata_role: {
+        Args: { p_role: string; p_user_id: string };
+        Returns: undefined;
+      };
     };
     Enums: {
       app_role: "learner" | "educator" | "content_manager" | "admin";
-      enrollment_status: "active" | "paused" | "completed" | "revoked";
-      track_status: "draft" | "in_review" | "published" | "archived";
+      inquiry_status: "open" | "assigned" | "in_progress" | "closed";
+      topic_status: "draft" | "in_review" | "published" | "archived";
     };
-    CompositeTypes: {
-      [_ in never]: never;
-    };
+    CompositeTypes: { [_ in never]: never };
   };
 };
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
+type DatabaseWithoutInternals = Database;
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<
-  keyof Database,
-  "public"
->];
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">];
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
@@ -826,31 +446,6 @@ export type TablesInsert<
       : never
     : never;
 
-export type TablesUpdate<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U;
-    }
-    ? U
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U;
-      }
-      ? U
-      : never
-    : never;
-
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
@@ -867,30 +462,3 @@ export type Enums<
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never;
-
-export type CompositeTypes<
-  PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
-  }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
-> = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never;
-
-export const Constants = {
-  public: {
-    Enums: {
-      app_role: ["learner", "educator", "content_manager", "admin"],
-      enrollment_status: ["active", "paused", "completed", "revoked"],
-      track_status: ["draft", "in_review", "published", "archived"],
-    },
-  },
-} as const;

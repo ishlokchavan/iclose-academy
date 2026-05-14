@@ -26,7 +26,7 @@ export function SignUpForm({ next }: { next?: string }) {
       </div>
 
       <form action={action} className="space-y-4" noValidate>
-        <input type="hidden" name="next" value={next ?? "/dashboard"} />
+        <input type="hidden" name="next" value={next ?? "/topics"} />
         <Field label="Full name" name="fullName" autoComplete="name" required />
         <Field label="Email" name="email" type="email" autoComplete="email" required />
         <Field

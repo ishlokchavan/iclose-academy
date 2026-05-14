@@ -21,14 +21,13 @@ export function UserRoleSelect({
   const [role, setRole] = useState<Role>(initialRole);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-
   const isSelf = userId === selfId;
 
   function onChange(next: Role) {
     if (next === role) return;
-    setError(null);
     const prev = role;
-    setRole(next); // optimistic
+    setError(null);
+    setRole(next);
     startTransition(async () => {
       const res = await setUserRoleAction(userId, next);
       if (res.error) {
