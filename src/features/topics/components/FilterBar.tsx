@@ -341,7 +341,7 @@ function PanelContent() {
       <Group
         title="Sub-type"
         hint={selection.type.size === 0 ? "Pick a type to see sub-types" : undefined}
-        options={visibleSubtypes.map((s) => ({ value: s.slug, label: s.name }))}
+        options={visibleSubtypes.map((s) => ({ id: s.id, value: s.slug, label: s.name }))}
         selected={selection.subtype}
         onToggle={(v) => toggle("subtype", v)}
         pending={pending}
@@ -399,7 +399,7 @@ function Group({
 }: {
   title: string;
   hint?: string;
-  options: Array<{ value: string; label: string }>;
+  options: Array<{ id?: string; value: string; label: string }>;
   selected: Set<string>;
   onToggle: (v: string) => void;
   pending: boolean;
@@ -458,7 +458,7 @@ function Group({
               const active = selected.has(o.value);
               return (
                 <button
-                  key={o.value}
+                  key={o.id ?? o.value}
                   type="button"
                   onClick={() => onToggle(o.value)}
                   disabled={pending || disabled}
