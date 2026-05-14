@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { ROLE_LANDING } from "@/config/nav";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   sendOtpSchema,
@@ -10,13 +11,26 @@ import {
   signUpSchema,
   verifyOtpSchema,
 } from "@/features/auth/schemas/credentials";
+import type { Database } from "@/types/db";
 
 export type ActionState = { error?: string; success?: string; nextEmail?: string } | null;
 
 const safeNext = (raw: FormDataEntryValue | null) => {
   const value = typeof raw === "string" ? raw : "";
-  return value.startsWith("/") && !value.startsWith("//") ? value : "/topics";
+  return value.startsWith("/") && !value.startsWith("//") ? value : null;
 };
+
+async function getRoleLanding(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return "/sign-in";
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  const role = (profile?.role ?? "learner") as Database["public"]["Enums"]["app_role"];
+  return ROLE_LANDING[role];
+}
 
 // ----------------------------------------------------------------------------
 // Sign up with email + password
@@ -44,7 +58,7 @@ export async function signUpWithPasswordAction(
   if (error) return { error: error.message };
 
   revalidatePath("/", "layout");
-  redirect(safeNext(formData.get("next")));
+  redirect(safeNext(formData.get("next")) ?? await getRoleLanding(supabase));
 }
 
 // ----------------------------------------------------------------------------
@@ -65,7 +79,7 @@ export async function signInWithPasswordAction(
   if (error) return { error: error.message };
 
   revalidatePath("/", "layout");
-  redirect(safeNext(formData.get("next")));
+  redirect(safeNext(formData.get("next")) ?? await getRoleLanding(supabase));
 }
 
 // ----------------------------------------------------------------------------
@@ -113,7 +127,7 @@ export async function verifyOtpAction(
   if (error) return { error: error.message };
 
   revalidatePath("/", "layout");
-  redirect(safeNext(formData.get("next")));
+  redirect(safeNext(formData.get("next")) ?? await getRoleLanding(supabase));
 }
 
 // ----------------------------------------------------------------------------

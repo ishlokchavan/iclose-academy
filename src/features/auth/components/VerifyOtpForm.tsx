@@ -34,7 +34,7 @@ export function VerifyOtpForm({ email, next }: { email: string; next?: string })
 
       <form action={verifyAction} className="space-y-4" noValidate>
         <input type="hidden" name="email" value={email} />
-        <input type="hidden" name="next" value={next ?? "/topics"} />
+        <input type="hidden" name="next" value={next ?? ""} />
 
         <div className="space-y-1.5">
           <Label htmlFor="token">Code</Label>
