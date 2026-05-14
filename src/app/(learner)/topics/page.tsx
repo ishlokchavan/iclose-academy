@@ -120,7 +120,7 @@ function DefaultLayout({ topics }: { topics: TopicCardData[] }) {
               priority
               sizes="(max-width: 1024px) 100vw, calc(100vw - 17rem)"
               className="object-cover"
-              unoptimized
+  
             />
           ) : (
             <div className="h-full w-full bg-ink/10" />

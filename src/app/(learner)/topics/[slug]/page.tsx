@@ -21,11 +21,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function TopicDetailPage({ params }: Props) {
   const { slug } = await params;
   const user = await requireUser();
-  const topic = await getTopicBySlug(slug, user.id);
+
+  const [topic, taxonomy] = await Promise.all([
+    getTopicBySlug(slug, user.id),
+    getTaxonomy(),
+  ]);
+
   if (!topic) notFound();
   if (topic.status !== "published") notFound();
 
-  const { areas, types, subtypes } = await getTaxonomy();
+  const { areas, types, subtypes } = taxonomy;
 
   const thumb =
     topic.cover_url ??
@@ -64,7 +69,7 @@ export default async function TopicDetailPage({ params }: Props) {
               priority
               sizes="100vw"
               className="object-cover"
-              unoptimized
+  
             />
           </div>
         ) : (
@@ -161,7 +166,7 @@ export default async function TopicDetailPage({ params }: Props) {
                     width={44}
                     height={44}
                     className="rounded-full object-cover"
-                    unoptimized
+        
                   />
                 ) : (
                   <div className="grid size-11 place-items-center rounded-full bg-surface-subtle text-ink-tertiary">
