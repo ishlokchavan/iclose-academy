@@ -80,7 +80,7 @@ export const MANAGER_NAV: NavSection[] = [
     label: "Content",
     items: [
       { label: "Educators",  href: "/manage/educators", icon: "users" },
-      { label: "Taxonomy",   href: "/manage/taxonomy",  icon: "tags" },
+      { label: "Categories",  href: "/manage/taxonomy",  icon: "tags" },
     ],
   },
 ];
