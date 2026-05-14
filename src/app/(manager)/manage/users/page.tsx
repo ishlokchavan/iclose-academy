@@ -54,7 +54,17 @@ export default async function ManageUsersPage() {
                   {new Date(u.created_at).toLocaleDateString()}
                 </td>
                 <td className="px-5 py-4 text-right">
-                  <UserRoleSelect userId={u.id} initialRole={u.role} selfId={user.id} />
+                  <UserRoleSelect
+                    userId={u.id}
+                    initialRole={
+                      (["learner", "content_manager", "manager", "admin"] as const).includes(
+                        u.role as "learner" | "content_manager" | "manager" | "admin",
+                      )
+                        ? (u.role as "learner" | "content_manager" | "manager" | "admin")
+                        : "learner"
+                    }
+                    selfId={user.id}
+                  />
                 </td>
               </tr>
             ))}

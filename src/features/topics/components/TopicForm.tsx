@@ -124,7 +124,7 @@ export function TopicForm({
         <Field
           label="URL slug"
           error={slugTaken ? "That slug is already taken — choose a different one." : fieldError("slug")}
-          hint={!slugTaken && slugStatus !== "taken" ? "Auto-generated from the title. Editable." : undefined}
+          hint={!slugTaken ? "Auto-generated from the title. Editable." : undefined}
         >
           <div className="flex items-center gap-2">
             <span className="text-[12px] font-mono text-ink-muted">/topics/</span>
