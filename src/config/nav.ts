@@ -1,15 +1,11 @@
 import {
   Bookmark,
   CircleUserRound,
-  GraduationCap,
   Inbox,
   LayoutGrid,
   Library,
   MessageSquarePlus,
-  Send,
-  Settings,
   ShieldCheck,
-  Sparkles,
   Tags,
   Users,
   type LucideIcon,
@@ -22,29 +18,21 @@ export type NavIconName =
   | "bookmark"
   | "user"
   | "inbox"
-  | "send"
   | "grid"
   | "tags"
   | "users"
-  | "settings"
   | "shield"
-  | "graduation"
-  | "sparkles"
   | "message-plus";
 
 export const NAV_ICONS: Record<NavIconName, LucideIcon> = {
-  library: Library,
-  bookmark: Bookmark,
-  user: CircleUserRound,
-  inbox: Inbox,
-  send: Send,
-  grid: LayoutGrid,
-  tags: Tags,
-  users: Users,
-  settings: Settings,
-  shield: ShieldCheck,
-  graduation: GraduationCap,
-  sparkles: Sparkles,
+  library:        Library,
+  bookmark:       Bookmark,
+  user:           CircleUserRound,
+  inbox:          Inbox,
+  grid:           LayoutGrid,
+  tags:           Tags,
+  users:          Users,
+  shield:         ShieldCheck,
   "message-plus": MessageSquarePlus,
 };
 
@@ -52,56 +40,60 @@ export type NavItem = {
   label: string;
   href: string;
   icon: NavIconName;
-  /** Show this item in the mobile bottom nav. */
   mobile?: boolean;
 };
 
 export type NavSection = { label?: string; items: NavItem[] };
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Learner
+// ──────────────────────────────────────────────────────────────────────────────
 export const LEARNER_NAV: NavSection[] = [
   {
     items: [
-      { label: "Library", href: "/topics", icon: "library", mobile: true },
+      { label: "Browse",       href: "/topics",        icon: "library",      mobile: true },
       { label: "Post inquiry", href: "/inquiries/new", icon: "message-plus", mobile: true },
-      { label: "My inquiries", href: "/inquiries", icon: "inbox", mobile: true },
+      { label: "My inquiries", href: "/inquiries",     icon: "inbox",        mobile: true },
     ],
   },
   {
     label: "Account",
     items: [
-      { label: "Saved", href: "/saved", icon: "bookmark" },
+      { label: "Saved",   href: "/saved",   icon: "bookmark" },
       { label: "Profile", href: "/profile", icon: "user", mobile: true },
     ],
   },
 ];
 
-export const EDUCATOR_NAV: NavSection[] = [
+// ──────────────────────────────────────────────────────────────────────────────
+// Content Manager — everything except users
+// ──────────────────────────────────────────────────────────────────────────────
+export const MANAGER_NAV: NavSection[] = [
   {
     items: [
-      { label: "My topics", href: "/educator", icon: "grid", mobile: true },
-      { label: "Inquiries", href: "/educator/inquiries", icon: "inbox", mobile: true },
+      { label: "Overview",   href: "/manage",           icon: "grid",    mobile: true },
+      { label: "Topics",     href: "/manage/topics",    icon: "library", mobile: true },
+      { label: "Inquiries",  href: "/manage/inquiries", icon: "inbox",   mobile: true },
     ],
   },
   {
-    label: "Account",
-    items: [{ label: "Profile", href: "/profile", icon: "user", mobile: true }],
+    label: "Content",
+    items: [
+      { label: "Educators",  href: "/manage/educators", icon: "users" },
+      { label: "Taxonomy",   href: "/manage/taxonomy",  icon: "tags" },
+    ],
   },
 ];
 
-export const STAFF_NAV: NavSection[] = [
+// ──────────────────────────────────────────────────────────────────────────────
+// Admin — manager nav + user management
+// ──────────────────────────────────────────────────────────────────────────────
+export const ADMIN_NAV: NavSection[] = [
+  ...MANAGER_NAV,
   {
+    label: "Platform",
     items: [
-      { label: "Overview", href: "/staff", icon: "grid", mobile: true },
-      { label: "Topics", href: "/staff/topics", icon: "library", mobile: true },
-      { label: "Inquiries", href: "/staff/inquiries", icon: "inbox", mobile: true },
-    ],
-  },
-  {
-    label: "Configuration",
-    items: [
-      { label: "Educator routing", href: "/staff/educators", icon: "graduation" },
-      { label: "Taxonomy", href: "/staff/taxonomy", icon: "tags" },
-      { label: "Users", href: "/staff/users", icon: "users" },
+      { label: "Users", href: "/manage/users", icon: "users" },
     ],
   },
 ];
@@ -110,24 +102,27 @@ export function navForRole(role: AppRole): NavSection[] {
   switch (role) {
     case "learner":
       return LEARNER_NAV;
-    case "educator":
-      return EDUCATOR_NAV;
-    case "content_manager":
     case "admin":
-      return STAFF_NAV;
+      return ADMIN_NAV;
+    case "manager":
+    case "content_manager":
+    case "educator":
+      return MANAGER_NAV;
   }
 }
 
 export const ROLE_LANDING: Record<AppRole, string> = {
-  learner: "/topics",
-  educator: "/educator",
-  content_manager: "/staff",
-  admin: "/staff",
+  learner:         "/topics",
+  educator:        "/manage",  // legacy — redirect to manager area
+  content_manager: "/manage",  // legacy
+  manager:         "/manage",
+  admin:           "/manage",
 };
 
 export const ROLE_LABEL: Record<AppRole, { label: string; icon: LucideIcon }> = {
-  learner: { label: "Learner", icon: GraduationCap },
-  educator: { label: "Educator", icon: Sparkles },
-  content_manager: { label: "Content Manager", icon: ShieldCheck },
-  admin: { label: "Admin", icon: ShieldCheck },
+  learner:         { label: "Learner",         icon: Library },
+  educator:        { label: "Educator",        icon: Users },  // legacy
+  content_manager: { label: "Content Manager", icon: ShieldCheck }, // legacy
+  manager:         { label: "Manager",         icon: ShieldCheck },
+  admin:           { label: "Admin",           icon: ShieldCheck },
 };

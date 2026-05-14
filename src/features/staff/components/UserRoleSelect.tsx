@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 import { setUserRoleAction } from "@/features/staff/server/user-actions";
 
-type Role = "learner" | "educator" | "content_manager" | "admin";
+type Role = "learner" | "educator" | "content_manager" | "manager" | "admin";
 
 export function UserRoleSelect({
   userId,
@@ -50,8 +50,7 @@ export function UserRoleSelect({
           className="h-9 rounded-md border border-hairline bg-surface-raised px-2.5 text-sm text-ink disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:border-accent"
         >
           <option value="learner">Learner</option>
-          <option value="educator">Educator</option>
-          <option value="content_manager">Content Manager</option>
+          <option value="manager">Manager</option>
           <option value="admin">Admin</option>
         </select>
         {pending ? <Spinner className="size-3.5 text-ink-muted" /> : null}

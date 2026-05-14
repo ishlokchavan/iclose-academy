@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Archive, Eye, EyeOff, Send, Trash2 } from "lucide-react";
+import { Archive, Eye, EyeOff, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -10,7 +10,6 @@ import {
   archiveTopicAction,
   deleteTopicAction,
   publishTopicAction,
-  submitTopicForReviewAction,
   unpublishTopicAction,
 } from "@/features/topics/server/actions";
 import type { TopicStatus } from "@/features/topics/types";
@@ -41,33 +40,15 @@ export function LifecycleActions({
 
   return (
     <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-      {status === "draft" ? (
-        <>
-          <Button
-            variant="primary"
-            onClick={() => run(() => publishTopicAction(topicId, slug))}
-            disabled={pending || !hasVideo}
-            title={!hasVideo ? "Add a YouTube video first" : undefined}
-          >
-            {pending ? <Spinner className="size-4" /> : <Eye className="size-4" />}
-            Publish
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => run(() => submitTopicForReviewAction(topicId, slug))}
-            disabled={pending}
-          >
-            <Send className="size-4" /> Submit for review
-          </Button>
-        </>
-      ) : null}
-      {status === "in_review" ? (
+      {(status === "draft" || status === "in_review") ? (
         <Button
           variant="primary"
           onClick={() => run(() => publishTopicAction(topicId, slug))}
           disabled={pending || !hasVideo}
+          title={!hasVideo ? "Add a YouTube video first" : undefined}
         >
-          <Eye className="size-4" /> Publish
+          {pending ? <Spinner className="size-4" /> : <Eye className="size-4" />}
+          Publish
         </Button>
       ) : null}
       {status === "published" ? (

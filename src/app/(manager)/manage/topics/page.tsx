@@ -1,33 +1,33 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Inbox, MapPin, User } from "lucide-react";
+import { Inbox, MapPin, Plus, User } from "lucide-react";
 
 import { EmptyState } from "@/components/patterns/EmptyState";
 import { PageHeader } from "@/components/patterns/PageHeader";
+import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/features/topics/components/StatusBadge";
 import { getStaffTopics } from "@/features/topics/server/queries";
 import type { TopicStatus } from "@/features/topics/types";
 import { cn } from "@/lib/utils/cn";
 
-export const metadata: Metadata = { title: "Topics · Staff" };
+export const metadata: Metadata = { title: "Topics" };
 
 type Props = { searchParams: Promise<{ status?: string }> };
 
 const FILTERS: Array<{ value: TopicStatus | "all"; label: string }> = [
-  { value: "in_review", label: "In Review" },
   { value: "published", label: "Published" },
-  { value: "draft", label: "Drafts" },
-  { value: "archived", label: "Archived" },
-  { value: "all", label: "All" },
+  { value: "draft",     label: "Drafts" },
+  { value: "archived",  label: "Archived" },
+  { value: "all",       label: "All" },
 ];
 
 function parseStatus(raw?: string): TopicStatus | undefined {
-  if (raw === "draft" || raw === "in_review" || raw === "published" || raw === "archived") return raw;
+  if (raw === "draft" || raw === "published" || raw === "archived" || raw === "in_review") return raw;
   return undefined;
 }
 
-export default async function StaffTopicsPage({ searchParams }: Props) {
+export default async function ManageTopicsPage({ searchParams }: Props) {
   const { status } = await searchParams;
   const filter = parseStatus(status);
   const topics = await getStaffTopics(filter);
@@ -35,24 +35,27 @@ export default async function StaffTopicsPage({ searchParams }: Props) {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Staff"
+        eyebrow="Content"
         title="Topics"
-        description="All topics across all educators. Review submissions, audit published, manage lifecycle."
+        description="All published and draft topics. Create, edit, and manage the content library."
+        actions={
+          <Button asChild size="sm">
+            <Link href="/manage/topics/new"><Plus className="size-3.5" /> New topic</Link>
+          </Button>
+        }
       />
 
       <nav className="flex flex-wrap items-center gap-1.5 border-b border-hairline pb-3">
         {FILTERS.map((f) => {
-          const active = (filter ?? "in_review") === f.value;
-          const href = f.value === "all" ? "/staff/topics" : `/staff/topics?status=${f.value}`;
+          const active = (filter ?? "published") === f.value || (f.value === "all" && !filter);
+          const href = f.value === "all" ? "/manage/topics" : `/manage/topics?status=${f.value}`;
           return (
             <Link
               key={f.value}
               href={href}
               className={cn(
-                "rounded-full px-3 py-1.5 text-sm transition-colors duration-200 ease-luxury",
-                active
-                  ? "bg-ink text-white"
-                  : "text-ink-muted hover:bg-surface-subtle hover:text-ink",
+                "rounded-full px-3.5 py-1.5 text-[14px] transition-all duration-150 ease-apple",
+                active ? "bg-ink text-white" : "text-ink-muted hover:bg-surface-subtle hover:text-ink",
               )}
             >
               {f.label}
@@ -72,10 +75,10 @@ export default async function StaffTopicsPage({ searchParams }: Props) {
             return (
               <li key={t.id}>
                 <Link
-                  href={`/staff/topics/${t.slug}`}
-                  className="group flex items-center gap-4 rounded-lg border border-hairline bg-surface-raised p-3 transition-all duration-200 ease-luxury hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-card-hover"
+                  href={`/manage/topics/${t.slug}`}
+                  className="group flex items-center gap-4 rounded-xl border border-hairline bg-surface-raised p-3 shadow-card transition-all duration-200 ease-spring hover:-translate-y-0.5 hover:shadow-card-hover"
                 >
-                  <div className="relative h-16 w-28 shrink-0 overflow-hidden rounded-md bg-surface-subtle">
+                  <div className="relative h-16 w-28 shrink-0 overflow-hidden rounded-lg bg-surface-subtle">
                     {thumb ? (
                       <Image src={thumb} alt="" fill sizes="120px" className="object-cover" unoptimized />
                     ) : null}
@@ -84,18 +87,16 @@ export default async function StaffTopicsPage({ searchParams }: Props) {
                     <div className="flex items-center gap-2">
                       <StatusBadge status={t.status} />
                       {t.type ? (
-                        <span className="text-[11px] font-mono uppercase tracking-widest text-ink-muted">
-                          {t.type.name}
-                        </span>
+                        <span className="text-[11px] tracking-wide text-ink-muted">{t.type.name}</span>
                       ) : null}
                     </div>
-                    <p className="mt-1 truncate text-sm font-medium text-ink group-hover:text-accent transition-colors">
+                    <p className="mt-1 truncate text-[14px] font-medium text-ink group-hover:text-accent transition-colors">
                       {t.title}
                     </p>
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-muted">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-ink-muted">
                       <span className="flex items-center gap-1">
                         <User className="size-3" />
-                        {t.educator.full_name ?? "Unknown"}
+                        {t.educator.full_name ?? "—"}
                       </span>
                       {(t.area || t.subarea) && (
                         <span className="flex items-center gap-1">

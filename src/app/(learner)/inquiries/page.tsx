@@ -22,11 +22,11 @@ export default async function MyInquiriesPage({ searchParams }: Props) {
       <PageHeader
         eyebrow="Account"
         title="My inquiries"
-        description="Leads you've posted. We route them to the specialist who covers the area."
+        description="Leads you've posted. Our team will follow up on each one."
         actions={
           <Link
             href="/inquiries/new"
-            className="inline-flex h-10 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-white hover:bg-accent/90 transition-colors"
+            className="inline-flex h-10 items-center gap-2 rounded-full bg-accent px-4 text-sm font-semibold text-white hover:bg-accent/90 transition-colors"
           >
             <MessageSquarePlus className="size-4" /> Post inquiry
           </Link>
@@ -35,7 +35,7 @@ export default async function MyInquiriesPage({ searchParams }: Props) {
 
       {posted ? (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-700">
-          Inquiry posted. We'll route it to the right specialist.
+          Inquiry posted — our team will follow up shortly.
         </div>
       ) : null}
 
@@ -54,11 +54,6 @@ export default async function MyInquiriesPage({ searchParams }: Props) {
             >
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 <InquiryStatusBadge status={i.status} />
-                {i.assigned_educator ? (
-                  <span className="text-[11px] font-mono uppercase tracking-widest text-ink-muted">
-                    Assigned to {i.assigned_educator.full_name ?? "—"}
-                  </span>
-                ) : null}
                 <span className="ml-auto text-[11px] text-ink-muted">
                   {new Date(i.created_at).toLocaleString()}
                 </span>

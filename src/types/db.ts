@@ -1,8 +1,6 @@
 // =============================================================================
 // AUTO-GENERATED — do not edit by hand.
 // Regenerate with: pnpm db:types  (or via the Supabase MCP `generate_typescript_types`).
-// `__InternalSupabase` is intentionally stripped — see src/lib/supabase/{server,client}.ts
-// for the cast back to SupabaseClient<Database> (compat with @supabase/ssr@0.5.2).
 // =============================================================================
 
 export type Json =
@@ -52,30 +50,30 @@ export type Database = {
         };
         Relationships: [];
       };
-      educator_assignments: {
+      educators: {
         Row: {
           id: string;
-          educator_id: string;
-          area_id: string;
-          type_id: string | null;
-          subarea: string | null;
+          name: string;
+          photo_url: string | null;
+          bio: string | null;
           created_at: string;
+          updated_at: string;
         };
         Insert: {
           id?: string;
-          educator_id: string;
-          area_id: string;
-          type_id?: string | null;
-          subarea?: string | null;
+          name: string;
+          photo_url?: string | null;
+          bio?: string | null;
           created_at?: string;
+          updated_at?: string;
         };
         Update: {
           id?: string;
-          educator_id?: string;
-          area_id?: string;
-          type_id?: string | null;
-          subarea?: string | null;
+          name?: string;
+          photo_url?: string | null;
+          bio?: string | null;
           created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -310,6 +308,7 @@ export type Database = {
           created_at: string;
           description: string | null;
           educator_id: string;
+          educator_record_id: string | null;
           id: string;
           published_at: string | null;
           slug: string;
@@ -327,6 +326,7 @@ export type Database = {
           created_at?: string;
           description?: string | null;
           educator_id: string;
+          educator_record_id?: string | null;
           id?: string;
           published_at?: string | null;
           slug: string;
@@ -344,6 +344,7 @@ export type Database = {
           created_at?: string;
           description?: string | null;
           educator_id?: string;
+          educator_record_id?: string | null;
           id?: string;
           published_at?: string | null;
           slug?: string;
@@ -393,14 +394,13 @@ export type Database = {
       current_user_role: { Args: never; Returns: string };
       is_admin: { Args: never; Returns: boolean };
       is_staff: { Args: never; Returns: boolean };
-      reroute_inquiry: { Args: { p_inquiry_id: string }; Returns: undefined };
       set_app_metadata_role: {
         Args: { p_role: string; p_user_id: string };
         Returns: undefined;
       };
     };
     Enums: {
-      app_role: "learner" | "educator" | "content_manager" | "admin";
+      app_role: "learner" | "educator" | "content_manager" | "manager" | "admin";
       inquiry_status: "open" | "assigned" | "in_progress" | "closed";
       topic_status: "draft" | "in_review" | "published" | "archived";
     };
