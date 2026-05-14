@@ -5,15 +5,14 @@ import { Bookmark } from "lucide-react";
 import { EmptyState } from "@/components/patterns/EmptyState";
 import { PageHeader } from "@/components/patterns/PageHeader";
 import { TopicCard } from "@/features/topics/components/TopicCard";
-import { getLibraryTopics } from "@/features/topics/server/queries";
+import { getSavedTopics } from "@/features/topics/server/queries";
 import { requireUser } from "@/lib/auth/guards";
 
 export const metadata: Metadata = { title: "Saved" };
 
 export default async function SavedPage() {
   const user = await requireUser();
-  const all = await getLibraryTopics({}, user.id);
-  const saved = all.filter((t) => t.saved);
+  const saved = await getSavedTopics(user.id);
 
   return (
     <div className="space-y-8">

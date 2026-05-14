@@ -80,7 +80,7 @@ export default async function ManageTopicsPage({ searchParams }: Props) {
                 >
                   <div className="relative h-16 w-28 shrink-0 overflow-hidden rounded-lg bg-surface-subtle">
                     {thumb ? (
-                      <Image src={thumb} alt="" fill sizes="120px" className="object-cover" unoptimized />
+                      <Image src={thumb} alt="" fill sizes="120px" className="object-cover" />
                     ) : null}
                   </div>
                   <div className="min-w-0 flex-1">

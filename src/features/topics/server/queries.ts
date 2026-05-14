@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type {
   Area,
@@ -176,14 +178,42 @@ export async function getTopicBySlug(
 }
 
 // ----------------------------------------------------------------------------
-// Taxonomy lookups for forms + filter UI.
+// Saved topics — direct join instead of fetching all then filtering.
 // ----------------------------------------------------------------------------
-export async function getTaxonomy() {
+export async function getSavedTopics(userId: string): Promise<TopicCard[]> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data: savedItems } = await supabase
+    .from("saved_items")
+    .select("entity_id")
+    .eq("user_id", userId)
+    .eq("entity_type", "topic");
+
+  const topicIds = (savedItems ?? []).map((s) => s.entity_id);
+  if (topicIds.length === 0) return [];
+
+  const { data } = await supabase
+    .from("topics")
+    .select(TOPIC_SELECT)
+    .eq("status", "published")
+    .in("id", topicIds)
+    .order("published_at", { ascending: false });
+
+  const savedSet = new Set(topicIds);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return ((data ?? []) as any[]).map((t) => shapeRow(t, savedSet));
+}
+
+// ----------------------------------------------------------------------------
+// Taxonomy lookups for forms + filter UI.
+// Wrapped with React cache for per-request deduplication.
+// ----------------------------------------------------------------------------
+export const getTaxonomy = cache(async () => {
   const supabase = await createSupabaseServerClient();
   const [areasRes, typesRes, subtypesRes] = await Promise.all([
     supabase
       .from("areas")
-      .select("id, slug, name, educator_id")
+      .select("id, slug, name")
       .is("archived_at", null)
       .order("sort_order"),
     supabase
@@ -202,4 +232,4 @@ export async function getTaxonomy() {
     types: (typesRes.data ?? []) as PropertyType[],
     subtypes: (subtypesRes.data ?? []) as PropertySubtype[],
   };
-}
+});
