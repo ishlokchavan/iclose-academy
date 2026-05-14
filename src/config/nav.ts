@@ -99,6 +99,7 @@ export const STAFF_NAV: NavSection[] = [
   {
     label: "Configuration",
     items: [
+      { label: "Educator routing", href: "/staff/educators", icon: "graduation" },
       { label: "Taxonomy", href: "/staff/taxonomy", icon: "tags" },
       { label: "Users", href: "/staff/users", icon: "users" },
     ],

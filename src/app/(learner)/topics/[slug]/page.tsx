@@ -5,7 +5,7 @@ import { ChevronLeft, MapPin, MessageSquarePlus, User } from "lucide-react";
 
 import { BookmarkButton } from "@/features/topics/components/BookmarkButton";
 import { ResourceList } from "@/features/topics/components/ResourceList";
-import { getTaxonomy, getTopicBySlug } from "@/features/topics/server/queries";
+import { getCoveredAreaIds, getTaxonomy, getTopicBySlug } from "@/features/topics/server/queries";
 import { InquiryForm } from "@/features/inquiries/components/InquiryForm";
 import { requireUser } from "@/lib/auth/guards";
 
@@ -26,7 +26,10 @@ export default async function TopicDetailPage({ params }: Props) {
     notFound();
   }
 
-  const { areas, types, subtypes } = await getTaxonomy();
+  const [{ areas, types, subtypes }, coveredAreaIds] = await Promise.all([
+    getTaxonomy(),
+    getCoveredAreaIds(),
+  ]);
 
   return (
     <div className="space-y-8">
@@ -113,6 +116,7 @@ export default async function TopicDetailPage({ params }: Props) {
           areas={areas}
           types={types}
           subtypes={subtypes}
+          coveredAreaIds={Array.from(coveredAreaIds)}
           lockTaxonomy
           prefill={{
             email: user.email,

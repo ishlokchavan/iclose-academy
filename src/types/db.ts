@@ -50,15 +50,34 @@ export type Database = {
           sort_order?: number;
           updated_at?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: "areas_educator_id_fkey";
-            columns: ["educator_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
+      };
+      educator_assignments: {
+        Row: {
+          id: string;
+          educator_id: string;
+          area_id: string;
+          type_id: string | null;
+          subarea: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          educator_id: string;
+          area_id: string;
+          type_id?: string | null;
+          subarea?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          educator_id?: string;
+          area_id?: string;
+          type_id?: string | null;
+          subarea?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
       };
       inquiries: {
         Row: {
@@ -374,6 +393,7 @@ export type Database = {
       current_user_role: { Args: never; Returns: string };
       is_admin: { Args: never; Returns: boolean };
       is_staff: { Args: never; Returns: boolean };
+      reroute_inquiry: { Args: { p_inquiry_id: string }; Returns: undefined };
       set_app_metadata_role: {
         Args: { p_role: string; p_user_id: string };
         Returns: undefined;

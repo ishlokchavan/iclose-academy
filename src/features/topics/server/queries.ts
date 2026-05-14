@@ -192,6 +192,26 @@ export async function getTopicBySlug(
 }
 
 // ----------------------------------------------------------------------------
+// Area IDs that have at least one educator owner (via educator_assignments
+// or the legacy areas.educator_id fallback). Used to warn learners when they
+// pick an area with no specialist yet.
+// ----------------------------------------------------------------------------
+export async function getCoveredAreaIds(): Promise<Set<string>> {
+  const supabase = await createSupabaseServerClient();
+  const [{ data: assignments }, { data: legacy }] = await Promise.all([
+    supabase.from("educator_assignments").select("area_id"),
+    supabase
+      .from("areas")
+      .select("id")
+      .not("educator_id", "is", null),
+  ]);
+  const set = new Set<string>();
+  for (const a of assignments ?? []) set.add(a.area_id);
+  for (const a of legacy ?? []) set.add(a.id);
+  return set;
+}
+
+// ----------------------------------------------------------------------------
 // Taxonomy lookups for forms + filter UI.
 // ----------------------------------------------------------------------------
 export async function getTaxonomy() {

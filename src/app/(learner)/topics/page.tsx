@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
-import { Library } from "lucide-react";
+import Link from "next/link";
+import { Library, MessageSquarePlus } from "lucide-react";
 
 import { EmptyState } from "@/components/patterns/EmptyState";
-import { PageHeader } from "@/components/patterns/PageHeader";
-import { FilterBar } from "@/features/topics/components/FilterBar";
+import {
+  FilterPanel,
+  FilterPills,
+  FilterProvider,
+} from "@/features/topics/components/FilterBar";
 import { TopicCard } from "@/features/topics/components/TopicCard";
 import { getLibraryTopics, getTaxonomy } from "@/features/topics/server/queries";
 import { requireUser } from "@/lib/auth/guards";
@@ -28,7 +32,7 @@ function asArray(v: string | string[] | undefined): string[] {
 export default async function LibraryPage({ searchParams }: Props) {
   const user = await requireUser();
   const sp = await searchParams;
-  const { areas, types, subtypes } = await getTaxonomy();
+  const taxonomy = await getTaxonomy();
   const topics = await getLibraryTopics(
     {
       areaSlugs: asArray(sp.area),
@@ -41,28 +45,50 @@ export default async function LibraryPage({ searchParams }: Props) {
   );
 
   return (
-    <div className="space-y-8">
-      <PageHeader
-        eyebrow="Dubai real estate"
-        title="Library"
-        description="Niche specialist videos. Filter by area, building, and property type to find what fits your client."
-      />
+    <FilterProvider taxonomy={taxonomy}>
+      <div className="space-y-6">
+        <header className="space-y-2">
+          <p className="eyebrow">Dubai real estate</p>
+          <h1 className="display text-display-lg text-ink">Specialist library</h1>
+          <p className="max-w-2xl text-base text-ink-muted">
+            Niche videos on the buildings, communities, and asset classes that matter.
+            Filter to your client&rsquo;s exact ask.
+          </p>
+        </header>
 
-      <FilterBar areas={areas} types={types} subtypes={subtypes} />
+        <FilterPills resultCount={topics.length} />
 
-      {topics.length === 0 ? (
-        <EmptyState
-          icon={Library}
-          title="No topics match those filters"
-          description="Try removing a filter, or post an inquiry and we'll route it to the right specialist."
-        />
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {topics.map((t) => (
-            <TopicCard key={t.id} topic={t} />
-          ))}
+        <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
+          <div className="lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:pr-2">
+            <FilterPanel />
+          </div>
+
+          <main>
+            {topics.length === 0 ? (
+              <EmptyState
+                icon={Library}
+                title="No topics match those filters"
+                description="Try removing a filter, or post an inquiry and the platform will route it to the right specialist."
+                action={
+                  <Link
+                    href="/inquiries/new"
+                    className="inline-flex h-10 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-white hover:bg-accent/90 transition-colors"
+                  >
+                    <MessageSquarePlus className="size-4" />
+                    Post an inquiry instead
+                  </Link>
+                }
+              />
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {topics.map((t) => (
+                  <TopicCard key={t.id} topic={t} />
+                ))}
+              </div>
+            )}
+          </main>
         </div>
-      )}
-    </div>
+      </div>
+    </FilterProvider>
   );
 }
