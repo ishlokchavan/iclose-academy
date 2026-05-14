@@ -213,7 +213,7 @@ export const getTaxonomy = cache(async () => {
   const [areasRes, typesRes, subtypesRes] = await Promise.all([
     supabase
       .from("areas")
-      .select("id, slug, name")
+      .select("id, slug, name, educator_id")
       .is("archived_at", null)
       .order("sort_order"),
     supabase
