@@ -6,7 +6,7 @@ import { z } from "zod";
 import { requireMinRole } from "@/lib/auth/guards";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-const ROLES = ["learner", "educator", "content_manager", "admin"] as const;
+const ROLES = ["learner", "content_manager", "manager", "admin"] as const;
 
 const setRoleSchema = z.object({
   userId: z.string().uuid(),

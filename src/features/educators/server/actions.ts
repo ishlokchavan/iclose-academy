@@ -22,7 +22,7 @@ export async function createEducatorAction(
     photo_url: formData.get("photo_url") || undefined,
     bio:       formData.get("bio") || undefined,
   });
-  if (!parsed.success) return { error: parsed.error.errors[0].message };
+  if (!parsed.success) return { error: parsed.error.errors[0]?.message ?? "Invalid input" };
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("educators").insert({
@@ -46,7 +46,7 @@ export async function updateEducatorAction(
     photo_url: formData.get("photo_url") || undefined,
     bio:       formData.get("bio") || undefined,
   });
-  if (!parsed.success) return { error: parsed.error.errors[0].message };
+  if (!parsed.success) return { error: parsed.error.errors[0]?.message ?? "Invalid input" };
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
