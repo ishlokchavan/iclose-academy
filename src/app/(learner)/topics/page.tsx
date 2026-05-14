@@ -50,12 +50,15 @@ export default async function BrowsePage({ searchParams }: { searchParams: Searc
     <Suspense>
       <FilterProvider taxonomy={taxonomy}>
         <div className="pb-16">
+          {/* Mobile drawer lives here so it's never clipped by hidden lg:block */}
+          <FilterPanel />
+
           {/* ── Two-column layout ─────────────────────────────────────── */}
           <div className="flex gap-8">
             {/* Sidebar: hidden on mobile (drawer instead), sticky on desktop */}
             <div className="hidden lg:block w-64 shrink-0">
               <div className="sticky top-6">
-                <FilterPanel />
+                <FilterPanel desktopOnly />
               </div>
             </div>
 

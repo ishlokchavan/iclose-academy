@@ -227,16 +227,18 @@ export function FilterPills({ resultCount }: { resultCount: number }) {
 // =============================================================================
 // Sidebar (desktop) + drawer (mobile)
 // =============================================================================
-export function FilterPanel() {
+export function FilterPanel({ desktopOnly }: { desktopOnly?: boolean }) {
   const { drawerOpen, setDrawerOpen, selection, clearAll } = useFilter();
 
   return (
     <>
-      <aside className="hidden lg:block">
-        <PanelContent />
-      </aside>
+      {desktopOnly ? (
+        <aside>
+          <PanelContent />
+        </aside>
+      ) : null}
 
-      {drawerOpen ? (
+      {!desktopOnly && drawerOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
