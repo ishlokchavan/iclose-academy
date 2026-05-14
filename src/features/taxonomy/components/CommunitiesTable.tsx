@@ -30,48 +30,46 @@ export function CommunitiesTable({
 
   return (
     <div className="overflow-hidden rounded-xl border border-hairline bg-surface-raised shadow-card">
-      {areas.length === 0 && !addOpen ? (
-        <div className="px-6 py-12 text-center">
-          <p className="text-[14px] text-ink-muted">No communities yet.</p>
-          <p className="mt-1 text-[12px] text-ink-tertiary">Add your first community below.</p>
-        </div>
-      ) : (
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-hairline bg-surface-subtle/40">
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-tertiary">
-                Community
-              </th>
-              <th className="hidden px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-tertiary sm:table-cell">
-                Specialist
-              </th>
-              <th className="w-10 px-4 py-3" />
+      <table className="w-full">
+        <thead>
+          <tr className="border-b border-hairline bg-surface-subtle/40">
+            <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-tertiary">
+              Community
+            </th>
+            <th className="hidden px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-tertiary sm:table-cell">
+              Specialist
+            </th>
+            <th className="px-4 py-3 text-right">
+              {!addOpen && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setAddOpen(true)}
+                  className="h-7 text-[12px]"
+                >
+                  <Plus className="size-3.5" /> Add community
+                </Button>
+              )}
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-hairline">
+          {areas.length === 0 && !addOpen && (
+            <tr>
+              <td colSpan={3} className="px-6 py-10 text-center">
+                <p className="text-[14px] text-ink-muted">No communities yet.</p>
+              </td>
             </tr>
-          </thead>
-          <tbody className="divide-y divide-hairline">
-            {areas.map((area) => (
-              <AreaRow key={area.id} area={area} educators={educators} />
-            ))}
-            {addOpen && (
-              <NewAreaRow educators={educators} onClose={() => setAddOpen(false)} />
-            )}
-          </tbody>
-        </table>
-      )}
-
-      {!addOpen && (
-        <div className={areas.length > 0 ? "border-t border-hairline px-4 py-3" : "px-4 pb-4"}>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setAddOpen(true)}
-            className="text-[13px]"
-          >
-            <Plus className="size-3.5" /> Add community
-          </Button>
-        </div>
-      )}
+          )}
+          {areas.map((area) => (
+            <AreaRow key={area.id} area={area} educators={educators} />
+          ))}
+          {addOpen && (
+            <NewAreaRow educators={educators} onClose={() => setAddOpen(false)} />
+          )}
+        </tbody>
+      </table>
     </div>
   );
 }

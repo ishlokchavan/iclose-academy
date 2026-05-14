@@ -31,8 +31,8 @@ export default async function ManageCategoriesPage({ searchParams }: Props) {
   const educators = (educatorsRes.data ?? []) as { id: string; full_name: string | null }[];
 
   const tabs = [
-    { id: "communities", label: "Communities" },
-    { id: "types",       label: "Property Types" },
+    { id: "communities", label: "Communities", count: taxonomy.areas.length },
+    { id: "types",       label: "Property Types", count: taxonomy.types.length },
   ] as const;
 
   return (
@@ -57,6 +57,14 @@ export default async function ManageCategoriesPage({ searchParams }: Props) {
             )}
           >
             {t.label}
+            <span className={cn(
+              "ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+              activeTab === t.id
+                ? "bg-accent/15 text-accent"
+                : "bg-surface-subtle text-ink-tertiary",
+            )}>
+              {t.count}
+            </span>
           </Link>
         ))}
       </div>
