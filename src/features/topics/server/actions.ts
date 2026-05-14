@@ -19,19 +19,27 @@ export type TopicActionState =
 
 export type ActionResult = { error?: string };
 
+export async function checkSlugAvailableAction(slug: string, excludeId?: string): Promise<boolean> {
+  const supabase = await createSupabaseServerClient();
+  let q = supabase.from("topics").select("id").eq("slug", slug);
+  if (excludeId) q = q.neq("id", excludeId);
+  const { data } = await q.maybeSingle();
+  return !data; // true = available
+}
+
 function assertCanAuthor(role: string) {
-  if (role !== "educator" && role !== "content_manager" && role !== "admin") {
-    throw new Error("Only educators and staff can author topics");
+  if (role !== "manager" && role !== "content_manager" && role !== "admin") {
+    throw new Error("Only managers and admins can author topics");
   }
 }
 
 function revalidate(slug?: string) {
   revalidatePath("/topics");
-  revalidatePath("/educator");
+  revalidatePath("/manage");
+  revalidatePath("/manage/topics");
   if (slug) {
     revalidatePath(`/topics/${slug}`);
-    revalidatePath(`/educator/topics/${slug}`);
-    revalidatePath(`/staff/topics/${slug}`);
+    revalidatePath(`/manage/topics/${slug}`);
   }
 }
 
@@ -46,13 +54,13 @@ export async function createTopicAction(
   assertCanAuthor(user.role);
 
   const parsed = createTopicSchema.safeParse({
-    title: formData.get("title"),
-    slug: formData.get("slug"),
+    title:       formData.get("title"),
+    slug:        formData.get("slug"),
     description: formData.get("description"),
-    youtube_id: formData.get("youtube_id"),
-    area_id: formData.get("area_id"),
-    subarea: formData.get("subarea"),
-    type_id: formData.get("type_id"),
+    youtube_id:  formData.get("youtube_id"),
+    area_id:     formData.get("area_id"),
+    subarea:     formData.get("subarea"),
+    type_id:     formData.get("type_id"),
     subtype_ids: formData.getAll("subtype_ids"),
   });
 
@@ -65,18 +73,21 @@ export async function createTopicAction(
     };
   }
 
+  const educatorRecordId = (formData.get("educator_record_id") as string) || null;
+
   const supabase = await createSupabaseServerClient();
   const { data: inserted, error } = await supabase
     .from("topics")
     .insert({
-      title: parsed.data.title,
-      slug: parsed.data.slug,
-      description: parsed.data.description,
-      youtube_id: parsed.data.youtube_id,
-      area_id: parsed.data.area_id,
-      subarea: parsed.data.subarea,
-      type_id: parsed.data.type_id,
-      educator_id: user.id,
+      title:              parsed.data.title,
+      slug:               parsed.data.slug,
+      description:        parsed.data.description,
+      youtube_id:         parsed.data.youtube_id,
+      area_id:            parsed.data.area_id,
+      subarea:            parsed.data.subarea,
+      type_id:            parsed.data.type_id,
+      educator_id:        user.id, // legacy column — still required (NOT NULL)
+      educator_record_id: educatorRecordId,
     })
     .select("id, slug")
     .single();
@@ -88,15 +99,12 @@ export async function createTopicAction(
 
   if (parsed.data.subtype_ids.length > 0) {
     await supabase.from("topic_subtypes").insert(
-      parsed.data.subtype_ids.map((sid) => ({
-        topic_id: inserted.id,
-        subtype_id: sid,
-      })),
+      parsed.data.subtype_ids.map((sid) => ({ topic_id: inserted.id, subtype_id: sid })),
     );
   }
 
   revalidate(inserted.slug);
-  redirect(`/educator/topics/${inserted.slug}/edit`);
+  redirect(`/manage/topics/${inserted.slug}/edit`);
 }
 
 // ----------------------------------------------------------------------------
@@ -111,13 +119,13 @@ export async function updateTopicAction(
   assertCanAuthor(user.role);
 
   const parsed = updateTopicSchema.safeParse({
-    title: formData.get("title"),
-    slug: formData.get("slug"),
+    title:       formData.get("title"),
+    slug:        formData.get("slug"),
     description: formData.get("description"),
-    youtube_id: formData.get("youtube_id"),
-    area_id: formData.get("area_id"),
-    subarea: formData.get("subarea"),
-    type_id: formData.get("type_id"),
+    youtube_id:  formData.get("youtube_id"),
+    area_id:     formData.get("area_id"),
+    subarea:     formData.get("subarea"),
+    type_id:     formData.get("type_id"),
     subtype_ids: formData.getAll("subtype_ids"),
   });
 
@@ -130,17 +138,20 @@ export async function updateTopicAction(
     };
   }
 
+  const educatorRecordId = (formData.get("educator_record_id") as string) || null;
+
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("topics")
     .update({
-      title: parsed.data.title,
-      slug: parsed.data.slug,
-      description: parsed.data.description,
-      youtube_id: parsed.data.youtube_id,
-      area_id: parsed.data.area_id,
-      subarea: parsed.data.subarea,
-      type_id: parsed.data.type_id,
+      title:              parsed.data.title,
+      slug:               parsed.data.slug,
+      description:        parsed.data.description,
+      youtube_id:         parsed.data.youtube_id,
+      area_id:            parsed.data.area_id,
+      subarea:            parsed.data.subarea,
+      type_id:            parsed.data.type_id,
+      educator_record_id: educatorRecordId,
     })
     .eq("id", topicId);
 
@@ -149,14 +160,10 @@ export async function updateTopicAction(
     return { error: error.message };
   }
 
-  // Replace subtypes wholesale (simpler than diff).
   await supabase.from("topic_subtypes").delete().eq("topic_id", topicId);
   if (parsed.data.subtype_ids.length > 0) {
     await supabase.from("topic_subtypes").insert(
-      parsed.data.subtype_ids.map((sid) => ({
-        topic_id: topicId,
-        subtype_id: sid,
-      })),
+      parsed.data.subtype_ids.map((sid) => ({ topic_id: topicId, subtype_id: sid })),
     );
   }
 
@@ -165,55 +172,22 @@ export async function updateTopicAction(
 }
 
 // ----------------------------------------------------------------------------
-// Lifecycle
+// Lifecycle (draft → published → archived)
 // ----------------------------------------------------------------------------
-export async function submitTopicForReviewAction(
-  topicId: string,
-  slug: string,
-): Promise<ActionResult> {
+export async function publishTopicAction(topicId: string, slug: string): Promise<ActionResult> {
   const user = await requireUser();
   assertCanAuthor(user.role);
-
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("topics")
-    .update({ status: "in_review" })
-    .eq("id", topicId)
-    .eq("status", "draft");
-  if (error) return { error: error.message };
-
-  revalidate(slug);
-  return {};
-}
-
-export async function publishTopicAction(
-  topicId: string,
-  slug: string,
-): Promise<ActionResult> {
-  const user = await requireUser();
-  // Educators may self-publish in this MVP (no staff approval gate).
-  // Staff can also publish anyone's topic.
-  assertCanAuthor(user.role);
-
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
-    .from("topics")
-    .update({
-      status: "published",
-      published_at: new Date().toISOString(),
-      archived_at: null,
-    })
+    .update({ status: "published", published_at: new Date().toISOString(), archived_at: null })
     .eq("id", topicId);
   if (error) return { error: error.message };
-
   revalidate(slug);
   return {};
 }
 
-export async function unpublishTopicAction(
-  topicId: string,
-  slug: string,
-): Promise<ActionResult> {
+export async function unpublishTopicAction(topicId: string, slug: string): Promise<ActionResult> {
   await requireUser();
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
@@ -225,10 +199,7 @@ export async function unpublishTopicAction(
   return {};
 }
 
-export async function archiveTopicAction(
-  topicId: string,
-  slug: string,
-): Promise<ActionResult> {
+export async function archiveTopicAction(topicId: string, slug: string): Promise<ActionResult> {
   await requireUser();
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
@@ -240,16 +211,13 @@ export async function archiveTopicAction(
   return {};
 }
 
-export async function deleteTopicAction(
-  topicId: string,
-  slug: string,
-): Promise<ActionResult> {
+export async function deleteTopicAction(topicId: string, _slug: string): Promise<ActionResult> {
   await requireUser();
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("topics").delete().eq("id", topicId);
   if (error) return { error: error.message };
-  revalidate(slug);
-  redirect("/educator");
+  revalidatePath("/manage/topics");
+  redirect("/manage/topics");
 }
 
 // ----------------------------------------------------------------------------
@@ -262,10 +230,7 @@ export async function updateTopicCoverAction(
 ): Promise<ActionResult> {
   await requireUser();
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
-    .from("topics")
-    .update({ cover_url: coverUrl })
-    .eq("id", topicId);
+  const { error } = await supabase.from("topics").update({ cover_url: coverUrl }).eq("id", topicId);
   if (error) return { error: error.message };
   revalidate(slug);
   return {};
@@ -274,23 +239,14 @@ export async function updateTopicCoverAction(
 // ----------------------------------------------------------------------------
 // Save / unsave (learner bookmark)
 // ----------------------------------------------------------------------------
-export async function saveTopicAction(
-  topicId: string,
-  saved: boolean,
-): Promise<ActionResult> {
+export async function saveTopicAction(topicId: string, saved: boolean): Promise<ActionResult> {
   const user = await requireUser();
   const supabase = await createSupabaseServerClient();
   if (saved) {
-    await supabase
-      .from("saved_items")
-      .insert({ user_id: user.id, entity_type: "topic", entity_id: topicId });
+    await supabase.from("saved_items").insert({ user_id: user.id, entity_type: "topic", entity_id: topicId });
   } else {
-    await supabase
-      .from("saved_items")
-      .delete()
-      .eq("user_id", user.id)
-      .eq("entity_type", "topic")
-      .eq("entity_id", topicId);
+    await supabase.from("saved_items").delete()
+      .eq("user_id", user.id).eq("entity_type", "topic").eq("entity_id", topicId);
   }
   revalidatePath("/topics");
   revalidatePath("/saved");
@@ -312,26 +268,16 @@ async function nextResourceSortOrder(topicId: string) {
 }
 
 export async function createLinkResourceAction(
-  topicId: string,
-  slug: string,
-  formData: FormData,
+  topicId: string, slug: string, formData: FormData,
 ): Promise<ActionResult> {
   const user = await requireUser();
   assertCanAuthor(user.role);
-  const parsed = createLinkResourceSchema.safeParse({
-    label: formData.get("label"),
-    url: formData.get("url"),
-  });
+  const parsed = createLinkResourceSchema.safeParse({ label: formData.get("label"), url: formData.get("url") });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
-
   const supabase = await createSupabaseServerClient();
   const sort_order = await nextResourceSortOrder(topicId);
   const { error } = await supabase.from("topic_resources").insert({
-    topic_id: topicId,
-    label: parsed.data.label,
-    url: parsed.data.url,
-    kind: "link",
-    sort_order,
+    topic_id: topicId, label: parsed.data.label, url: parsed.data.url, kind: "link", sort_order,
   });
   if (error) return { error: error.message };
   revalidate(slug);
@@ -339,45 +285,28 @@ export async function createLinkResourceAction(
 }
 
 export async function createFileResourceAction(
-  topicId: string,
-  slug: string,
-  payload: { label: string; storage_path: string },
+  topicId: string, slug: string, payload: { label: string; storage_path: string },
 ): Promise<ActionResult> {
   const user = await requireUser();
   assertCanAuthor(user.role);
   const parsed = createFileResourceSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
-
   const supabase = await createSupabaseServerClient();
   const sort_order = await nextResourceSortOrder(topicId);
   const { error } = await supabase.from("topic_resources").insert({
-    topic_id: topicId,
-    label: parsed.data.label,
-    storage_path: parsed.data.storage_path,
-    kind: "file",
-    sort_order,
+    topic_id: topicId, label: parsed.data.label, storage_path: parsed.data.storage_path, kind: "file", sort_order,
   });
   if (error) return { error: error.message };
   revalidate(slug);
   return {};
 }
 
-export async function deleteResourceAction(
-  resourceId: string,
-  slug: string,
-): Promise<ActionResult> {
+export async function deleteResourceAction(resourceId: string, slug: string): Promise<ActionResult> {
   const user = await requireUser();
   assertCanAuthor(user.role);
   const supabase = await createSupabaseServerClient();
-
-  const { data: row } = await supabase
-    .from("topic_resources")
-    .select("storage_path")
-    .eq("id", resourceId)
-    .maybeSingle();
-  if (row?.storage_path) {
-    await supabase.storage.from("topic-resources").remove([row.storage_path]);
-  }
+  const { data: row } = await supabase.from("topic_resources").select("storage_path").eq("id", resourceId).maybeSingle();
+  if (row?.storage_path) await supabase.storage.from("topic-resources").remove([row.storage_path]);
   const { error } = await supabase.from("topic_resources").delete().eq("id", resourceId);
   if (error) return { error: error.message };
   revalidate(slug);

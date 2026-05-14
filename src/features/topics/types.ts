@@ -23,6 +23,7 @@ export type PropertySubtype = {
   name: string;
 };
 
+/** Educator as shown on topic cards — now sourced from the educators table */
 export type EducatorPreview = {
   id: string;
   full_name: string | null;

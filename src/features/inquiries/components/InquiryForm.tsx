@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
-import { Info } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,17 +27,13 @@ export function InquiryForm({
   areas,
   types,
   subtypes,
-  coveredAreaIds,
   prefill,
   lockTaxonomy = false,
 }: {
   areas: Area[];
   types: PropertyType[];
   subtypes: PropertySubtype[];
-  /** IDs of areas that currently have an educator assignment. */
-  coveredAreaIds?: string[];
   prefill?: Prefill;
-  /** When the form is rendered from a topic detail page, lock the filters. */
   lockTaxonomy?: boolean;
 }) {
   const [state, action, pending] = useActionState<CreateInquiryState, FormData>(
@@ -56,12 +51,6 @@ export function InquiryForm({
     () => (typeId ? subtypes.filter((s) => s.type_id === typeId) : []),
     [subtypes, typeId],
   );
-
-  const coveredSet = useMemo(
-    () => new Set(coveredAreaIds ?? []),
-    [coveredAreaIds],
-  );
-  const showUncoveredHint = !!areaId && !coveredSet.has(areaId);
 
   function toggleSub(id: string) {
     const next = new Set(pickedSubs);
@@ -90,19 +79,9 @@ export function InquiryForm({
           >
             <option value="">Any area</option>
             {areas.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-                {coveredAreaIds && !coveredSet.has(a.id) ? " · no specialist yet" : ""}
-              </option>
+              <option key={a.id} value={a.id}>{a.name}</option>
             ))}
           </select>
-          {showUncoveredHint ? (
-            <p className="flex items-start gap-1.5 text-xs text-amber-700">
-              <Info className="mt-0.5 size-3 shrink-0" />
-              No specialist is assigned to this area yet. Your inquiry will land in
-              the staff inbox until one is assigned.
-            </p>
-          ) : null}
         </Field>
 
         <Field label="Cluster / Building (optional)">

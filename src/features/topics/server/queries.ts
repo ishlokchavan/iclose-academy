@@ -17,11 +17,12 @@ const TOPIC_SELECT = `
   area:areas(id, slug, name),
   type:property_types(id, slug, name),
   topic_subtypes(subtype:property_subtypes(id, slug, name)),
-  educator:profiles!topics_educator_id_fkey(id, full_name, avatar_url)
+  educator_record:educators(id, name, photo_url)
 `;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function shapeRow(t: any, savedSet: Set<string>): TopicCard {
+  const ed = t.educator_record;
   return {
     id: t.id,
     slug: t.slug,
@@ -38,7 +39,9 @@ function shapeRow(t: any, savedSet: Set<string>): TopicCard {
     subtypes: ((t.topic_subtypes ?? []) as Array<{ subtype: { id: string; slug: string; name: string } | null }>)
       .map((x) => x.subtype)
       .filter((x): x is { id: string; slug: string; name: string } => !!x),
-    educator: t.educator ?? { id: "", full_name: null, avatar_url: null },
+    educator: ed
+      ? { id: ed.id, full_name: ed.name, avatar_url: ed.photo_url ?? null }
+      : { id: "", full_name: null, avatar_url: null },
     saved: savedSet.has(t.id),
   };
 }
@@ -111,25 +114,6 @@ export async function getLibraryTopics(
 }
 
 // ----------------------------------------------------------------------------
-// Topics owned by a single educator (any status).
-// ----------------------------------------------------------------------------
-export async function getEducatorTopics(
-  educatorId: string,
-  filter?: TopicStatus,
-): Promise<TopicCard[]> {
-  const supabase = await createSupabaseServerClient();
-  let q = supabase
-    .from("topics")
-    .select(TOPIC_SELECT)
-    .eq("educator_id", educatorId)
-    .order("updated_at", { ascending: false });
-  if (filter) q = q.eq("status", filter);
-  const { data } = await q;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return ((data ?? []) as any[]).map((t) => shapeRow(t, new Set()));
-}
-
-// ----------------------------------------------------------------------------
 // Cross-cutting staff view of all topics.
 // ----------------------------------------------------------------------------
 export async function getStaffTopics(filter?: TopicStatus): Promise<TopicCard[]> {
@@ -189,26 +173,6 @@ export async function getTopicBySlug(
       .sort((a, b) => a.sort_order - b.sort_order)
       .map(({ sort_order: _sort_order, ...rest }) => rest),
   };
-}
-
-// ----------------------------------------------------------------------------
-// Area IDs that have at least one educator owner (via educator_assignments
-// or the legacy areas.educator_id fallback). Used to warn learners when they
-// pick an area with no specialist yet.
-// ----------------------------------------------------------------------------
-export async function getCoveredAreaIds(): Promise<Set<string>> {
-  const supabase = await createSupabaseServerClient();
-  const [{ data: assignments }, { data: legacy }] = await Promise.all([
-    supabase.from("educator_assignments").select("area_id"),
-    supabase
-      .from("areas")
-      .select("id")
-      .not("educator_id", "is", null),
-  ]);
-  const set = new Set<string>();
-  for (const a of assignments ?? []) set.add(a.area_id);
-  for (const a of legacy ?? []) set.add(a.id);
-  return set;
 }
 
 // ----------------------------------------------------------------------------

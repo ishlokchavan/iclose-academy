@@ -39,15 +39,18 @@ export function SignInForm({ next }: { next?: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2 text-center sm:text-left">
+      <div className="space-y-1.5 text-center sm:text-left">
         <p className="eyebrow">Welcome back</p>
-        <h1 className="display text-display-lg text-ink">Sign in to iClose Academy</h1>
-        <p className="text-sm text-ink-muted">
+        <h1 className="text-[28px] font-bold tracking-tight text-ink">
+          Sign in to iClose Academy
+        </h1>
+        <p className="text-[15px] text-ink-muted">
           Access your specialist intelligence library.
         </p>
       </div>
 
-      <div className="flex rounded-md border border-hairline bg-surface-subtle p-1 text-sm">
+      {/* Mode switcher — Apple segmented control style */}
+      <div className="flex rounded-xl border border-hairline bg-surface-subtle p-1 text-sm">
         <ModeTab active={mode === "password"} onClick={() => setMode("password")}>
           Password
         </ModeTab>
@@ -83,7 +86,7 @@ export function SignInForm({ next }: { next?: string }) {
         </form>
       )}
 
-      <p className="text-sm text-ink-muted">
+      <p className="text-[13px] text-ink-muted">
         Don&apos;t have an account?{" "}
         <Link href="/sign-up" className="font-medium text-accent hover:underline">
           Create one
@@ -107,9 +110,12 @@ function ModeTab({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex-1 rounded px-3 py-2 transition-colors duration-200 ease-luxury ${
-        active ? "bg-surface-raised text-ink shadow-sm" : "text-ink-muted hover:text-ink"
-      }`}
+      className={[
+        "flex-1 rounded-lg px-3 py-2 text-[14px] font-medium transition-all duration-150 ease-apple",
+        active
+          ? "bg-surface-raised text-ink shadow-card"
+          : "text-ink-muted hover:text-ink",
+      ].join(" ")}
     >
       {children}
     </button>
@@ -124,7 +130,9 @@ function Field({
 }: { label: string; name: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={name}>{label}</Label>
+      <Label htmlFor={name} className="text-[14px] font-medium text-ink">
+        {label}
+      </Label>
       <Input id={name} name={name} type={type} {...props} />
     </div>
   );
@@ -132,7 +140,7 @@ function Field({
 
 function FieldError({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-sm text-destructive" role="alert">
+    <p className="text-[13px] text-destructive" role="alert">
       {children}
     </p>
   );

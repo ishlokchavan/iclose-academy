@@ -17,10 +17,10 @@ export function SignUpForm({ next }: { next?: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2 text-center sm:text-left">
+      <div className="space-y-1.5 text-center sm:text-left">
         <p className="eyebrow">Get started</p>
-        <h1 className="display text-display-lg text-ink">Create your account</h1>
-        <p className="text-sm text-ink-muted">
+        <h1 className="text-[28px] font-bold tracking-tight text-ink">Create your account</h1>
+        <p className="text-[15px] text-ink-muted">
           Free during MVP. No credit card required.
         </p>
       </div>
@@ -37,10 +37,10 @@ export function SignUpForm({ next }: { next?: string }) {
           minLength={8}
           required
         />
-        <p className="text-xs text-ink-muted">Minimum 8 characters.</p>
+        <p className="text-[12px] text-ink-muted">Minimum 8 characters.</p>
 
         {state?.error ? (
-          <p className="text-sm text-destructive" role="alert">
+          <p className="text-[13px] text-destructive" role="alert">
             {state.error}
           </p>
         ) : null}
@@ -50,7 +50,7 @@ export function SignUpForm({ next }: { next?: string }) {
         </Button>
       </form>
 
-      <p className="text-sm text-ink-muted">
+      <p className="text-[13px] text-ink-muted">
         Already have an account?{" "}
         <Link href="/sign-in" className="font-medium text-accent hover:underline">
           Sign in
