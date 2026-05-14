@@ -57,7 +57,7 @@ export function TopicCard({
         {(topic.type || topic.subtypes.length > 0) && (
           <div className="flex flex-wrap items-center gap-1.5">
             {topic.type ? (
-              <span className="inline-flex items-center rounded-full bg-accent/8 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-accent">
+              <span className="inline-flex items-center rounded-full bg-accent/10 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-accent">
                 {topic.type.name}
               </span>
             ) : null}
