@@ -19,6 +19,14 @@ export type TopicActionState =
 
 export type ActionResult = { error?: string };
 
+export async function checkSlugAvailableAction(slug: string, excludeId?: string): Promise<boolean> {
+  const supabase = await createSupabaseServerClient();
+  let q = supabase.from("topics").select("id").eq("slug", slug);
+  if (excludeId) q = q.neq("id", excludeId);
+  const { data } = await q.maybeSingle();
+  return !data; // true = available
+}
+
 function assertCanAuthor(role: string) {
   if (role !== "manager" && role !== "content_manager" && role !== "admin") {
     throw new Error("Only managers and admins can author topics");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import {
+  checkSlugAvailableAction,
   createTopicAction,
   updateTopicAction,
   type TopicActionState,
@@ -68,10 +69,25 @@ export function TopicForm({
   const [title, setTitle] = useState(defaults?.title ?? "");
   const [slug, setSlug] = useState(defaults?.slug ?? "");
   const [slugTouched, setSlugTouched] = useState(!!defaults?.slug);
+  const [slugStatus, setSlugStatus] = useState<"idle" | "checking" | "taken" | "available">("idle");
+  const slugTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!slugTouched) setSlug(slugify(title));
   }, [title, slugTouched]);
+
+  useEffect(() => {
+    if (!slug) { setSlugStatus("idle"); return; }
+    // Skip check if slug hasn't changed from the saved value (update mode)
+    if (mode === "update" && slug === defaults?.slug) { setSlugStatus("idle"); return; }
+    setSlugStatus("checking");
+    if (slugTimer.current) clearTimeout(slugTimer.current);
+    slugTimer.current = setTimeout(async () => {
+      const available = await checkSlugAvailableAction(slug, topicId);
+      setSlugStatus(available ? "available" : "taken");
+    }, 400);
+    return () => { if (slugTimer.current) clearTimeout(slugTimer.current); };
+  }, [slug, topicId, defaults?.slug, mode]);
 
   const [typeId, setTypeId] = useState(defaults?.type_id ?? "");
   const [picked, setPicked] = useState<Set<string>>(new Set(defaults?.subtype_ids ?? []));
@@ -91,6 +107,7 @@ export function TopicForm({
   const fieldError = (name: string) =>
     state && "fieldErrors" in state ? state.fieldErrors?.[name] : undefined;
   const success = state && "success" in state && state.success;
+  const slugTaken = slugStatus === "taken";
 
   return (
     <form action={action} className="space-y-6">
@@ -104,15 +121,32 @@ export function TopicForm({
             placeholder="e.g. 1450 sq.ft 2BED + Maid in JVC"
           />
         </Field>
-        <Field label="URL slug" error={fieldError("slug")} hint="Auto-generated from the title. Editable.">
+        <Field
+          label="URL slug"
+          error={slugTaken ? "That slug is already taken — choose a different one." : fieldError("slug")}
+          hint={!slugTaken && slugStatus !== "taken" ? "Auto-generated from the title. Editable." : undefined}
+        >
           <div className="flex items-center gap-2">
             <span className="text-[12px] font-mono text-ink-muted">/topics/</span>
-            <Input
-              name="slug"
-              value={slug}
-              onChange={(e) => { setSlug(e.target.value); setSlugTouched(true); }}
-              required
-            />
+            <div className="relative flex-1">
+              <Input
+                name="slug"
+                value={slug}
+                onChange={(e) => { setSlug(e.target.value); setSlugTouched(true); }}
+                required
+                className={cn(slugTaken && "border-destructive focus:border-destructive focus:ring-destructive/20")}
+              />
+              {slugStatus === "checking" && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <Spinner className="size-3.5 text-ink-muted" />
+                </div>
+              )}
+              {slugStatus === "available" && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-600 text-[11px] font-medium">
+                  ✓ Available
+                </div>
+              )}
+            </div>
           </div>
         </Field>
         <Field label="Description" hint="What learners will get out of this video.">
@@ -204,7 +238,7 @@ export function TopicForm({
 
       <div className="flex justify-end gap-2">
         <Button type="button" variant="secondary" onClick={() => router.push(backHref)}>Cancel</Button>
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" disabled={pending || slugTaken || slugStatus === "checking"}>
           {pending ? <Spinner className="size-4" /> : mode === "create" ? "Create topic" : "Save changes"}
         </Button>
       </div>
