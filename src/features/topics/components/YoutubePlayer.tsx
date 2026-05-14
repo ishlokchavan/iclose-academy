@@ -53,6 +53,7 @@ export function YoutubePlayer({
   title: string;
   thumbUrl?: string | null;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YTPlayer | null>(null);
   const tickRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
@@ -141,8 +142,13 @@ export function YoutubePlayer({
   }
 
   function fullscreen() {
-    (wrapperRef.current?.closest(".player-root") as HTMLElement | null)
-      ?.requestFullscreen?.();
+    const el = containerRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen?.();
+    } else {
+      el.requestFullscreen?.();
+    }
   }
 
   /* ── Idle state: thumbnail + play button ─────────────────────────────── */
@@ -172,7 +178,7 @@ export function YoutubePlayer({
 
   /* ── Loading + ready states ──────────────────────────────────────────── */
   return (
-    <div className="player-root group/player relative aspect-video w-full overflow-hidden bg-black">
+    <div ref={containerRef} className="player-root group/player relative aspect-video w-full overflow-hidden bg-black">
       {/* YouTube iframe mounts here via IFrame API */}
       <div ref={wrapperRef} className="yt-wrapper absolute inset-0" />
 
