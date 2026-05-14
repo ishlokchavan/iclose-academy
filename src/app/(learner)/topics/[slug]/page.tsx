@@ -6,6 +6,7 @@ import { ChevronLeft, MapPin, MessageSquarePlus, User } from "lucide-react";
 
 import { BookmarkButton } from "@/features/topics/components/BookmarkButton";
 import { ResourceList } from "@/features/topics/components/ResourceList";
+import { YoutubePlayer } from "@/features/topics/components/YoutubePlayer";
 import { getTaxonomy, getTopicBySlug } from "@/features/topics/server/queries";
 import { InquiryForm } from "@/features/inquiries/components/InquiryForm";
 import { requireUser } from "@/lib/auth/guards";
@@ -49,17 +50,13 @@ export default async function TopicDetailPage({ params }: Props) {
       </Link>
 
       {/* ── Video player / hero ───────────────────────────────────────────────── */}
-      <div className="-mx-4 mb-8 sm:-mx-6 lg:mx-0">
+      <div className="-mx-4 mb-8 overflow-hidden sm:-mx-6 lg:mx-0 lg:rounded-2xl">
         {topic.youtube_id ? (
-          <div className="aspect-video w-full overflow-hidden bg-black lg:rounded-2xl">
-            <iframe
-              src={`https://www.youtube.com/embed/${topic.youtube_id}?rel=0&modestbranding=1&color=white`}
-              title={topic.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-              className="h-full w-full"
-            />
-          </div>
+          <YoutubePlayer
+            videoId={topic.youtube_id}
+            title={topic.title}
+            thumbUrl={topic.cover_url}
+          />
         ) : thumb ? (
           <div className="relative aspect-video w-full overflow-hidden bg-surface-subtle lg:rounded-2xl">
             <Image
