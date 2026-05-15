@@ -237,7 +237,7 @@ function DrawerBody({
               {user.full_name ?? "(no name)"}
               {isSelf && <span className="ml-1.5 text-[12px] font-normal text-ink-muted">you</span>}
             </p>
-            <p className="truncate text-[13px] text-ink-muted">{user.email ?? "—"}</p>
+            <p className="truncate text-[13px] text-ink-muted">{user.email ?? user.lead?.email ?? "—"}</p>
             <div className="mt-1.5">
               <RoleBadge role={user.role as "learner" | "manager" | "content_manager" | "admin"} />
             </div>
@@ -327,22 +327,17 @@ function DrawerBody({
         ) : (
           /* ── View mode ── */
           <>
-            <Section title="Account">
-              <FieldRow label="Email" value={user.email} />
-              <FieldRow label="Role" value={ROLE_LABEL[user.role]} />
-              {user.plan_key && <FieldRow label="Plan" value={<span className="capitalize">{user.plan_key}</span>} />}
-              <FieldRow label="Joined" value={formatDate(user.created_at)} />
-            </Section>
-
+            {/* Lead contact section — shown first for learners with a lead record */}
             {user.lead && (
               <Section title="Contact">
-                {user.lead.first_name && <FieldRow label="First name" value={user.lead.first_name} />}
-                {user.lead.last_name && <FieldRow label="Last name" value={user.lead.last_name} />}
+                <FieldRow label="First name" value={user.lead.first_name} />
+                <FieldRow label="Last name" value={user.lead.last_name} />
+                <FieldRow label="Email" value={user.lead.email} />
+                <FieldRow label="Phone" value={user.lead.phone} />
                 <FieldRow
-                  label="Phone"
-                  value={user.lead.phone || <span className="text-ink-muted">—</span>}
+                  label="Plan"
+                  value={user.plan_key ? <span className="capitalize">{user.plan_key}</span> : null}
                 />
-                {user.lead.source && <FieldRow label="Source" value={<span className="capitalize">{user.lead.source}</span>} />}
                 <FieldRow
                   label="Verified"
                   value={
@@ -359,8 +354,25 @@ function DrawerBody({
                     )
                   }
                 />
+                <FieldRow label="Registered" value={formatDate(user.lead.registered_at)} />
+                {user.lead.source && (
+                  <FieldRow label="Source" value={<span className="capitalize">{user.lead.source.replace(/_/g, " ")}</span>} />
+                )}
               </Section>
             )}
+
+            <Section title="Account">
+              {/* Show email from profile only if no lead (lead already shows it above) */}
+              {!user.lead && <FieldRow label="Email" value={user.email} />}
+              <FieldRow label="Role" value={ROLE_LABEL[user.role]} />
+              {!user.lead && user.plan_key && (
+                <FieldRow label="Plan" value={<span className="capitalize">{user.plan_key}</span>} />
+              )}
+              <FieldRow label="Joined" value={formatDate(user.created_at)} />
+              {user.updated_at && (
+                <FieldRow label="Last updated" value={formatDate(user.updated_at)} />
+              )}
+            </Section>
           </>
         )}
       </div>
