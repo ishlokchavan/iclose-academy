@@ -93,9 +93,10 @@ export function UsersPage({
           size="sm"
           onClick={() => setShowInvite(true)}
           className="shrink-0 gap-1.5"
+          aria-label="Invite member"
         >
           <UserPlus className="size-3.5" aria-hidden />
-          Invite member
+          <span className="hidden sm:inline">Invite member</span>
         </Button>
       </div>
 

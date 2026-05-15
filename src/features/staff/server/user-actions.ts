@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -12,6 +13,13 @@ export type ActionResult = { error?: string };
 
 const STAFF_ROLES = ["manager", "content_manager"] as const;
 type StaffRole = (typeof STAFF_ROLES)[number];
+
+async function getSiteOrigin() {
+  const hdrs = await headers();
+  const host = hdrs.get("x-forwarded-host") ?? hdrs.get("host") ?? "";
+  const proto = host.startsWith("localhost") ? "http" : "https";
+  return process.env.NEXT_PUBLIC_SITE_URL ?? `${proto}://${host}`;
+}
 
 // ─── Update role (staff only, admin cannot be assigned via UI) ────────────────
 export async function setUserRoleAction(
@@ -67,6 +75,30 @@ export async function updateUserNameAction(
   return {};
 }
 
+// ─── Update lead contact fields ───────────────────────────────────────────────
+export async function updateLeadFieldsAction(
+  email: string,
+  fields: { first_name?: string | null; last_name?: string | null; phone?: string | null },
+): Promise<ActionResult> {
+  await requireMinRole("admin");
+
+  if (!email) return { error: "No email address for this user." };
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("leads")
+    .update({
+      ...(fields.first_name !== undefined && { first_name: fields.first_name?.trim() || null }),
+      ...(fields.last_name !== undefined && { last_name: fields.last_name?.trim() || null }),
+      ...(fields.phone !== undefined && { phone: fields.phone?.trim() || "" }),
+    })
+    .eq("email", email);
+  if (error) return { error: error.message };
+
+  revalidatePath("/manage/users");
+  return {};
+}
+
 // ─── Delete user ──────────────────────────────────────────────────────────────
 export async function deleteUserAction(userId: string): Promise<ActionResult> {
   const caller = await requireMinRole("admin");
@@ -80,7 +112,7 @@ export async function deleteUserAction(userId: string): Promise<ActionResult> {
   return {};
 }
 
-// ─── Invite new user (manager only — admin not assignable via UI) ─────────────
+// ─── Invite new user (staff only — admin not assignable via UI) ───────────────
 export async function inviteUserAction(
   email: string,
   fullName: string,
@@ -94,32 +126,40 @@ export async function inviteUserAction(
   if (!name) return { error: "Name is required." };
   if (!STAFF_ROLES.includes(role)) return { error: "Invalid role." };
 
+  const origin = await getSiteOrigin();
   const admin = createSupabaseAdminClient();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
 
   const { data, error } = await admin.auth.admin.generateLink({
     type: "invite",
     email: parsedEmail.data,
     options: {
       data: { full_name: name },
-      redirectTo: `${siteUrl}/auth/callback`,
+      redirectTo: `${origin}/auth/accept-invite`,
     },
   });
   if (error) return { error: error.message };
 
-  // Set role on the auto-created profile (trigger creates it with role='learner')
+  // Upsert profile with correct role — handles race condition with DB trigger
   if (data.user?.id) {
     await admin
       .from("profiles")
-      .update({ role, full_name: name })
-      .eq("id", data.user.id);
+      .upsert({ id: data.user.id, role, full_name: name });
   }
 
-  // Send invite email via Gmail SMTP
-  if (data.properties?.action_link) {
+  // Extract token from action_link and send our own invite URL so we control the redirect
+  let inviteUrl = data.properties?.action_link ?? "";
+  try {
+    const actionUrl = new URL(data.properties?.action_link ?? "");
+    const token = actionUrl.searchParams.get("token");
+    if (token) {
+      inviteUrl = `${origin}/auth/accept-invite?token=${encodeURIComponent(token)}&email=${encodeURIComponent(parsedEmail.data)}`;
+    }
+  } catch { /* fall back to action_link */ }
+
+  if (inviteUrl) {
     try {
-      await sendInviteEmail(parsedEmail.data, name, data.properties.action_link);
-    } catch { /* email send failure is non-fatal — link was generated */ }
+      await sendInviteEmail(parsedEmail.data, name, inviteUrl);
+    } catch { /* non-fatal */ }
   }
 
   revalidatePath("/manage/users");
