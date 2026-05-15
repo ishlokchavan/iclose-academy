@@ -8,9 +8,16 @@ import { NAV_ICONS, type NavSection } from "@/config/nav";
 
 export function BottomNav({ sections }: { sections: NavSection[] }) {
   const pathname = usePathname();
-  const items = sections.flatMap((s) => s.items.filter((i) => i.mobile)).slice(0, 4);
+  const items = sections.flatMap((s) => s.items.filter((i) => i.mobile));
 
   if (items.length === 0) return null;
+
+  const colClass =
+    items.length <= 4
+      ? (["grid-cols-1", "grid-cols-2", "grid-cols-3", "grid-cols-4"] as const)[items.length - 1]
+      : items.length === 5
+        ? "grid-cols-5"
+        : "grid-cols-6";
 
   return (
     <nav
@@ -23,7 +30,7 @@ export function BottomNav({ sections }: { sections: NavSection[] }) {
         "pb-[env(safe-area-inset-bottom)]",
       )}
     >
-      <ul className="grid h-[56px] grid-cols-4">
+      <ul className={cn("grid h-[56px]", colClass)}>
         {items.map((item) => {
           const active = isActive(pathname, item.href);
           const Icon = NAV_ICONS[item.icon];
