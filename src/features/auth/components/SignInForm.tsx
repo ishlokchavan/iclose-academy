@@ -1,5 +1,6 @@
 "use client";
 
+import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useState } from "react";
@@ -19,6 +20,7 @@ type Mode = "password" | "otp";
 export function SignInForm({ next }: { next?: string }) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("password");
+  const [showPassword, setShowPassword] = useState(false);
 
   const [pwState, pwAction, pwPending] = useActionState<ActionState, FormData>(
     signInWithPasswordAction,
@@ -63,13 +65,41 @@ export function SignInForm({ next }: { next?: string }) {
         <form action={pwAction} className="space-y-4" noValidate>
           <input type="hidden" name="next" value={next ?? ""} />
           <Field label="Email" name="email" type="email" autoComplete="email" required />
-          <Field
-            label="Password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-          />
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password" className="text-[14px] font-medium text-ink">
+                Password
+              </Label>
+              <Link
+                href="/forgot-password"
+                className="text-[13px] text-ink-muted hover:text-ink transition-colors"
+              >
+                Forgot password?
+              </Link>
+            </div>
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                required
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-ink-muted hover:text-ink transition-colors"
+              >
+                {showPassword ? (
+                  <EyeOff className="size-4" aria-hidden />
+                ) : (
+                  <Eye className="size-4" aria-hidden />
+                )}
+              </button>
+            </div>
+          </div>
           {pwState?.error ? <FieldError>{pwState.error}</FieldError> : null}
           <Button type="submit" className="w-full" size="lg" disabled={pwPending}>
             {pwPending ? <Spinner /> : "Sign in"}
