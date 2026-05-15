@@ -29,7 +29,21 @@ export const verifyOtpSchema = z.object({
     .regex(/^\d{6,10}$/u, "Enter the code from your email"),
 });
 
+export const forgotPasswordSchema = z.object({
+  email,
+});
+
+export const resetPasswordSchema = z.object({
+  password,
+  confirmPassword: z.string(),
+}).refine((d) => d.password === d.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
 export type SignUpInput = z.infer<typeof signUpSchema>;
 export type SignInWithPasswordInput = z.infer<typeof signInWithPasswordSchema>;
 export type SendOtpInput = z.infer<typeof sendOtpSchema>;
 export type VerifyOtpInput = z.infer<typeof verifyOtpSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

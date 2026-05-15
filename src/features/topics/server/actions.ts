@@ -28,7 +28,7 @@ export async function checkSlugAvailableAction(slug: string, excludeId?: string)
 }
 
 function assertCanAuthor(role: string) {
-  if (role !== "manager" && role !== "content_manager" && role !== "admin") {
+  if (role !== "manager" && role !== "admin") {
     throw new Error("Only managers and admins can author topics");
   }
 }

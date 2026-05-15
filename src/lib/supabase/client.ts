@@ -14,7 +14,7 @@ export function createSupabaseBrowserClient(): SupabaseClient<Database> {
   if (!browserClient) {
     browserClient = createBrowserClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ) as unknown as SupabaseClient<Database>;
   }
