@@ -1,10 +1,10 @@
 import "server-only";
 
-import { FROM, mailer } from "./mailer";
+import { getFrom, getMailer } from "./mailer";
 
 export async function sendOtpEmail(to: string, code: string): Promise<void> {
-  await mailer.sendMail({
-    from: FROM,
+  await getMailer().sendMail({
+    from: getFrom(),
     to,
     subject: `${code} — your iClose Academy sign-in code`,
     html: `

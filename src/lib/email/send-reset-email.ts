@@ -1,10 +1,10 @@
 import "server-only";
 
-import { FROM, mailer } from "./mailer";
+import { getFrom, getMailer } from "./mailer";
 
 export async function sendResetEmail(to: string, resetLink: string): Promise<void> {
-  await mailer.sendMail({
-    from: FROM,
+  await getMailer().sendMail({
+    from: getFrom(),
     to,
     subject: "Reset your iClose Academy password",
     html: `
