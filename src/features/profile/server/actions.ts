@@ -15,12 +15,15 @@ export type ProfileActionResult = {
 
 export async function getOwnLeadData(email: string) {
   const admin = createSupabaseAdminClient();
+  // Use limit(1) instead of maybeSingle — leads table can contain duplicates
+  // (no unique constraint on email), and maybeSingle returns null when >1 row.
   const { data } = await admin
     .from("leads")
     .select("first_name, last_name, phone")
     .ilike("email", email)
-    .maybeSingle();
-  return data ?? null;
+    .order("created_at", { ascending: false })
+    .limit(1);
+  return data?.[0] ?? null;
 }
 
 export async function updateOwnProfileAction(fields: {
@@ -74,11 +77,12 @@ export async function updateOwnProfileAction(fields: {
 
   // Upsert lead row — create if missing, update if present (case-insensitive email match)
   if (user.email) {
-    const { data: existingLead } = await admin
+    const { data: existingLeads } = await admin
       .from("leads")
       .select("email")
       .ilike("email", user.email)
-      .maybeSingle();
+      .limit(1);
+    const existingLead = existingLeads?.[0];
 
     if (existingLead) {
       const { error: leadErr } = await admin
@@ -89,7 +93,7 @@ export async function updateOwnProfileAction(fields: {
           phone: phone || "",
           name: fullName ?? "",
         })
-        .eq("email", existingLead.email);
+        .ilike("email", user.email);
       if (leadErr) return { error: leadErr.message };
     } else {
       const { error: leadErr } = await admin.from("leads").insert({
