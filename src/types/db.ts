@@ -193,6 +193,48 @@ export type Database = {
         }
         Relationships: []
       }
+      hire_remarks: {
+        Row: {
+          application_id: string
+          content: string
+          created_at: string | null
+          created_by: string | null
+          created_by_name: string | null
+          id: string
+        }
+        Insert: {
+          application_id: string
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          created_by_name?: string | null
+          id?: string
+        }
+        Update: {
+          application_id?: string
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          created_by_name?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hire_remarks_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "intern_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hire_remarks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_emails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inquiries: {
         Row: {
           area_id: string | null
@@ -312,6 +354,8 @@ export type Database = {
       }
       intern_applications: {
         Row: {
+          consent_marketing: boolean
+          consented_at: string | null
           created_at: string
           email: string
           first_name: string
@@ -326,6 +370,8 @@ export type Database = {
           user_agent: string | null
         }
         Insert: {
+          consent_marketing?: boolean
+          consented_at?: string | null
           created_at?: string
           email: string
           first_name: string
@@ -340,6 +386,8 @@ export type Database = {
           user_agent?: string | null
         }
         Update: {
+          consent_marketing?: boolean
+          consented_at?: string | null
           created_at?: string
           email?: string
           first_name?: string
@@ -357,6 +405,8 @@ export type Database = {
       }
       leads: {
         Row: {
+          consent_marketing: boolean
+          consented_at: string | null
           created_at: string
           email: string
           first_name: string | null
@@ -373,6 +423,8 @@ export type Database = {
           verified_at: string | null
         }
         Insert: {
+          consent_marketing?: boolean
+          consented_at?: string | null
           created_at?: string
           email: string
           first_name?: string | null
@@ -389,6 +441,8 @@ export type Database = {
           verified_at?: string | null
         }
         Update: {
+          consent_marketing?: boolean
+          consented_at?: string | null
           created_at?: string
           email?: string
           first_name?: string | null
@@ -644,6 +698,7 @@ export type Database = {
       }
       specialist_applications: {
         Row: {
+          consented_at: string | null
           created_at: string
           email: string
           first_name: string
@@ -656,6 +711,7 @@ export type Database = {
           user_agent: string | null
         }
         Insert: {
+          consented_at?: string | null
           created_at?: string
           email: string
           first_name: string
@@ -668,6 +724,7 @@ export type Database = {
           user_agent?: string | null
         }
         Update: {
+          consented_at?: string | null
           created_at?: string
           email?: string
           first_name?: string
