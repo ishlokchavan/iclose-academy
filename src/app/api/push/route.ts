@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { requireUser } from "@/lib/auth/guards"
 
 webpush.setVapidDetails(
-  `mailto:${process.env.VAPID_EMAIL ?? "noreply@icloseacademy.com"}`,
+  `mailto:${process.env.VAPID_EMAIL ?? "noreply.iclose@gmail.com"}`,
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
   process.env.VAPID_PRIVATE_KEY!
 )

@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js"
 import type { Database } from "@/types/db"
 
 webpush.setVapidDetails(
-  `mailto:${process.env.VAPID_EMAIL ?? "noreply@icloseacademy.com"}`,
+  `mailto:${process.env.VAPID_EMAIL ?? "noreply.iclose@gmail.com"}`,
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
   process.env.VAPID_PRIVATE_KEY!
 )
