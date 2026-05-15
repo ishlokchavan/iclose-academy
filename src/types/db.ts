@@ -519,6 +519,63 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          actor_id: string | null
+          body: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          entity_url: string | null
+          id: string
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          body: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          entity_url?: string | null
+          id?: string
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          body?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          entity_url?: string | null
+          id?: string
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_settings: {
         Row: {
           description: string | null
@@ -916,8 +973,47 @@ export type Database = {
     Functions: {
       current_user_role: { Args: never; Returns: string }
       get_auth_user_id_by_email: { Args: { p_email: string }; Returns: string }
+      insert_notification: {
+        Args: {
+          p_actor_id: string
+          p_body: string
+          p_entity_id?: string
+          p_entity_type?: string
+          p_entity_url?: string
+          p_title: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       is_admin: { Args: never; Returns: boolean }
       is_staff: { Args: never; Returns: boolean }
+      notify_min_role: {
+        Args: {
+          p_actor_id: string
+          p_body: string
+          p_entity_id?: string
+          p_entity_type?: string
+          p_entity_url?: string
+          p_min_role: string
+          p_title: string
+          p_type: string
+        }
+        Returns: undefined
+      }
+      notify_role: {
+        Args: {
+          p_actor_id: string
+          p_body: string
+          p_entity_id?: string
+          p_entity_type?: string
+          p_entity_url?: string
+          p_role: string
+          p_title: string
+          p_type: string
+        }
+        Returns: undefined
+      }
       reroute_inquiry: { Args: { p_inquiry_id: string }; Returns: undefined }
       set_app_metadata_role: {
         Args: { p_role: string; p_user_id: string }
