@@ -78,21 +78,20 @@ export function UsersPage({
   return (
     <>
       {/* Toolbar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative max-w-xs flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-ink-muted" aria-hidden />
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-xs">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-muted" aria-hidden />
           <input
             type="search"
             placeholder="Search name or email…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-9 w-full rounded-lg border border-hairline bg-surface-raised pl-8 pr-3 text-[14px] text-ink placeholder:text-ink-muted focus:border-accent focus:outline-none"
+            className="h-9 w-full rounded-full border border-hairline bg-surface-raised pl-9 pr-4 text-[14px] text-ink placeholder:text-ink-muted focus:border-accent focus:outline-none"
           />
         </div>
         <Button
-          size="sm"
           onClick={() => setShowInvite(true)}
-          className="shrink-0 gap-1.5"
+          className="shrink-0"
           aria-label="Invite member"
         >
           <UserPlus className="size-3.5" aria-hidden />
