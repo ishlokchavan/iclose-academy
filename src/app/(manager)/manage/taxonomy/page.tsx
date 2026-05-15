@@ -24,7 +24,7 @@ export default async function ManageCategoriesPage({ searchParams }: Props) {
       .from("profiles")
       .select("id, full_name")
       .not("full_name", "is", null)
-      .in("role", ["educator", "content_manager", "manager"])
+      .in("role", ["educator", "manager"])
       .order("full_name"),
   ]);
 

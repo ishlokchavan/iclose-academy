@@ -20,7 +20,7 @@ import type { StaffUserRow } from "@/features/staff/server/user-queries";
 import type { Database } from "@/types/db";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
-type StaffRole = "manager" | "content_manager";
+type StaffRole = "manager";
 
 function initials(u: StaffUserRow) {
   return (u.full_name ?? u.email ?? "U")
@@ -43,7 +43,6 @@ function formatDate(iso: string) {
 const ROLE_LABEL: Record<AppRole, string> = {
   learner: "Learner",
   manager: "Manager",
-  content_manager: "Content Manager",
   admin: "Admin",
   educator: "Educator",
 };
@@ -149,7 +148,7 @@ function DrawerBody({
   const [staffEdit, setStaffEdit] = useState<StaffEditState>({
     full_name: user.full_name ?? "",
     email: displayEmail,
-    role: (["manager", "content_manager"].includes(user.role) ? user.role : "manager") as StaffRole,
+    role: "manager" as StaffRole,
   });
 
   // Admin edit state
@@ -170,7 +169,7 @@ function DrawerBody({
     setStaffEdit({
       full_name: user.full_name ?? "",
       email: displayEmail,
-      role: (["manager", "content_manager"].includes(user.role) ? user.role : "manager") as StaffRole,
+      role: "manager" as StaffRole,
     });
     setAdminEdit({ full_name: user.full_name ?? "", email: displayEmail });
   }
@@ -248,7 +247,7 @@ function DrawerBody({
             </p>
             <p className="truncate text-[13px] text-ink-muted">{user.email ?? user.lead?.email ?? "—"}</p>
             <div className="mt-1.5">
-              <RoleBadge role={user.role as "learner" | "manager" | "content_manager" | "admin"} />
+              <RoleBadge role={user.role as "learner" | "manager" | "admin"} />
             </div>
           </div>
         </div>
@@ -307,19 +306,7 @@ function DrawerBody({
                   value={staffEdit.email}
                   onChange={(v) => setStaffEdit((s) => ({ ...s, email: v }))}
                 />
-                {!isSelf && (
-                  <div className="space-y-1.5">
-                    <Label className="text-[12px] font-medium text-ink-muted">Role</Label>
-                    <select
-                      value={staffEdit.role}
-                      onChange={(e) => setStaffEdit((s) => ({ ...s, role: e.target.value as StaffRole }))}
-                      className="h-9 w-full rounded-md border border-hairline bg-surface-raised px-2.5 text-[14px] text-ink focus:outline-none focus:border-accent"
-                    >
-                      <option value="manager">Manager</option>
-                      <option value="content_manager">Content Manager</option>
-                    </select>
-                  </div>
-                )}
+                {/* Only one staff role exists (manager); no role selector needed. */}
               </div>
             )}
 

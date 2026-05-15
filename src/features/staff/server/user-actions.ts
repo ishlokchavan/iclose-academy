@@ -11,7 +11,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type ActionResult = { error?: string };
 
-const STAFF_ROLES = ["manager", "content_manager"] as const;
+const STAFF_ROLES = ["manager"] as const;
 type StaffRole = (typeof STAFF_ROLES)[number];
 
 async function getSiteOrigin() {

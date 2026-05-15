@@ -11,11 +11,10 @@ export async function requireUser(): Promise<SessionUser> {
 }
 
 const ROLE_RANK: Record<AppRole, number> = {
-  learner:         0,
-  educator:        1, // legacy — kept in DB enum, no active users
-  content_manager: 2, // legacy alias, same rank as manager
-  manager:         2,
-  admin:           3,
+  learner:  0,
+  educator: 1, // legacy — kept in DB enum, no active users
+  manager:  2,
+  admin:    3,
 };
 
 export async function requireRole(...allowed: AppRole[]): Promise<SessionUser> {

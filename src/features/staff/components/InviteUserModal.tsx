@@ -16,8 +16,7 @@ type State = { error?: string; success?: boolean } | null;
 async function wrappedInvite(prev: State, fd: FormData): Promise<State> {
   const email = fd.get("email") as string;
   const fullName = fd.get("fullName") as string;
-  const role = fd.get("role") as "manager" | "content_manager";
-  return inviteUserAction(email, fullName, role);
+  return inviteUserAction(email, fullName, "manager");
 }
 
 export function InviteUserModal({
@@ -59,18 +58,9 @@ export function InviteUserModal({
               <Label htmlFor="inv-email" className="text-[13px] font-medium text-ink">Email</Label>
               <Input id="inv-email" name="email" type="email" required autoComplete="off" placeholder="sarah@company.ae" />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="inv-role" className="text-[13px] font-medium text-ink">Role</Label>
-              <select
-                id="inv-role"
-                name="role"
-                defaultValue="manager"
-                className="h-9 w-full rounded-md border border-hairline bg-surface-raised px-2.5 text-[14px] text-ink focus:outline-none focus:border-accent"
-              >
-                <option value="manager">Manager</option>
-                <option value="content_manager">Content Manager</option>
-              </select>
-            </div>
+            <p className="text-[12px] text-ink-muted">
+              Invitee will be added as a <strong className="text-ink">Manager</strong>.
+            </p>
 
             {state?.error ? (
               <p className="text-[13px] text-destructive" role="alert">{state.error}</p>

@@ -59,7 +59,7 @@ export async function createAreaAction(
   _prev: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
-  await requireMinRole("content_manager");
+  await requireMinRole("manager");
   const parsed = createAreaSchema.safeParse({
     name: formData.get("name"),
     slug: formData.get("slug"),
@@ -80,7 +80,7 @@ export async function updateAreaAction(
   areaId: string,
   formData: FormData,
 ): Promise<ActionResult> {
-  await requireMinRole("content_manager");
+  await requireMinRole("manager");
   const parsed = createAreaSchema.safeParse({
     name: formData.get("name"),
     slug: formData.get("slug"),
@@ -95,7 +95,7 @@ export async function updateAreaAction(
 }
 
 export async function deleteAreaAction(areaId: string): Promise<ActionResult> {
-  await requireMinRole("content_manager");
+  await requireMinRole("manager");
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("areas").delete().eq("id", areaId);
   if (error) return { error: error.message };
@@ -107,7 +107,7 @@ export async function setAreaEducatorAction(
   areaId: string,
   educatorId: string | null,
 ): Promise<ActionResult> {
-  await requireMinRole("content_manager");
+  await requireMinRole("manager");
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("areas")
@@ -127,7 +127,7 @@ export async function createTypeAction(
   _prev: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
-  await requireMinRole("content_manager");
+  await requireMinRole("manager");
   const parsed = typeSchema.safeParse({
     name: formData.get("name"),
     slug: formData.get("slug"),
@@ -147,7 +147,7 @@ export async function updateTypeAction(
   typeId: string,
   formData: FormData,
 ): Promise<ActionResult> {
-  await requireMinRole("content_manager");
+  await requireMinRole("manager");
   const parsed = typeSchema.safeParse({
     name: formData.get("name"),
     slug: formData.get("slug"),
@@ -161,7 +161,7 @@ export async function updateTypeAction(
 }
 
 export async function deleteTypeAction(typeId: string): Promise<ActionResult> {
-  await requireMinRole("content_manager");
+  await requireMinRole("manager");
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("property_types").delete().eq("id", typeId);
   if (error) return { error: error.message };
@@ -179,7 +179,7 @@ export async function createSubtypeAction(
   _prev: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
-  await requireMinRole("content_manager");
+  await requireMinRole("manager");
   const parsed = subtypeSchema.safeParse({
     name: formData.get("name"),
     slug: formData.get("slug"),
@@ -202,7 +202,7 @@ export async function createSubtypeAction(
 }
 
 export async function deleteSubtypeAction(subtypeId: string): Promise<ActionResult> {
-  await requireMinRole("content_manager");
+  await requireMinRole("manager");
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("property_subtypes").delete().eq("id", subtypeId);
   if (error) return { error: error.message };

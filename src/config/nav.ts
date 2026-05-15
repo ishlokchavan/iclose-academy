@@ -105,24 +105,21 @@ export function navForRole(role: AppRole): NavSection[] {
     case "admin":
       return ADMIN_NAV;
     case "manager":
-    case "content_manager":
     case "educator":
       return MANAGER_NAV;
   }
 }
 
 export const ROLE_LANDING: Record<AppRole, string> = {
-  learner:         "/topics",
-  educator:        "/manage",  // legacy — redirect to manager area
-  content_manager: "/manage",  // legacy
-  manager:         "/manage",
-  admin:           "/manage",
+  learner:  "/topics",
+  educator: "/manage",  // legacy — redirect to manager area
+  manager:  "/manage",
+  admin:    "/manage",
 };
 
 export const ROLE_LABEL: Record<AppRole, { label: string; icon: LucideIcon }> = {
-  learner:         { label: "Learner",         icon: Library },
-  educator:        { label: "Educator",        icon: Users },  // legacy
-  content_manager: { label: "Content Manager", icon: ShieldCheck }, // legacy
-  manager:         { label: "Manager",         icon: ShieldCheck },
-  admin:           { label: "Admin",           icon: ShieldCheck },
+  learner:  { label: "Learner",  icon: Library },
+  educator: { label: "Educator", icon: Users },  // legacy
+  manager:  { label: "Manager",  icon: ShieldCheck },
+  admin:    { label: "Admin",    icon: ShieldCheck },
 };

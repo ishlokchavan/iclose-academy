@@ -13,7 +13,7 @@ import type { Database } from "@/types/db";
 type AppRole = Database["public"]["Enums"]["app_role"];
 type Tab = "learners" | "staff" | "admin";
 
-const STAFF_ROLES: AppRole[] = ["manager", "content_manager", "educator"];
+const STAFF_ROLES: AppRole[] = ["manager", "educator"];
 
 function tabFilter(tab: Tab) {
   return (u: StaffUserRow) => {
@@ -182,7 +182,7 @@ export function UsersPage({
                     {tab === "learners" ? (
                       <span className="text-[13px] text-ink-muted capitalize">{u.plan_key ?? "—"}</span>
                     ) : (
-                      <RoleBadge role={u.role as "learner" | "manager" | "content_manager" | "admin"} />
+                      <RoleBadge role={u.role as "learner" | "manager" | "admin"} />
                     )}
                   </td>
                   <td className="hidden px-5 py-3.5 text-[13px] text-ink-muted md:table-cell">
