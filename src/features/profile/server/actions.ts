@@ -58,15 +58,9 @@ export async function updateOwnProfileAction(fields: {
 
   let emailVerificationSent = false;
 
-  // Email change — use user's own session so Supabase sends verification to new address
+  // Email change — use user's own session so Supabase sends verification to new address.
+  // Supabase rejects duplicates internally, so no extra check is needed.
   if (newEmail && newEmail !== (user.email ?? "").toLowerCase()) {
-    // Check email not already taken
-    const { data: existing } = await admin.auth.admin.listUsers();
-    const taken = existing?.users?.some(
-      (u) => u.email?.toLowerCase() === newEmail && u.id !== user.id,
-    );
-    if (taken) return { error: "This email address is already in use." };
-
     const { error } = await supabase.auth.updateUser({ email: newEmail });
     if (error) return { error: error.message };
     emailVerificationSent = true;
@@ -78,7 +72,7 @@ export async function updateOwnProfileAction(fields: {
     await admin.from("profiles").update({ full_name: fullName }).eq("id", user.id);
   }
 
-  // Update lead row (matched by current email, case-insensitive)
+  // Upsert lead row — create if missing, update if present (case-insensitive email match)
   if (user.email) {
     const { data: existingLead } = await admin
       .from("leads")
@@ -87,17 +81,27 @@ export async function updateOwnProfileAction(fields: {
       .maybeSingle();
 
     if (existingLead) {
-      await admin
+      const { error: leadErr } = await admin
         .from("leads")
         .update({
           first_name: first || null,
           last_name: last || null,
           phone: phone || "",
-          ...(fullName && { name: fullName }),
+          name: fullName ?? "",
         })
         .eq("email", existingLead.email);
+      if (leadErr) return { error: leadErr.message };
+    } else {
+      const { error: leadErr } = await admin.from("leads").insert({
+        email: user.email,
+        name: fullName ?? "",
+        phone: phone || "",
+        first_name: first || null,
+        last_name: last || null,
+        source: "profile_self_edit",
+      });
+      if (leadErr) return { error: leadErr.message };
     }
-    // If no lead row exists, we skip — profile.full_name still captures the name.
   }
 
   revalidatePath("/profile");

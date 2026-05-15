@@ -18,16 +18,18 @@ export default async function ProfilePage() {
 
   const lead = user.email ? await getOwnLeadData(user.email) : null;
 
-  // Fallback: split full_name into first/last if lead row is missing those fields
-  const nameParts = (user.fullName ?? "").trim().split(/\s+/).filter(Boolean);
-  const fallbackFirst = nameParts[0] ?? "";
-  const fallbackLast = nameParts.slice(1).join(" ");
-
-  const initialFirstName = lead?.first_name ?? fallbackFirst;
-  const initialLastName = lead?.last_name ?? fallbackLast;
+  const initialFirstName = lead?.first_name ?? "";
+  const initialLastName = lead?.last_name ?? "";
   const initialPhone = lead?.phone ?? "";
 
-  const initials = (user.fullName ?? user.email ?? "U")
+  // Display name prefers the lead row; falls back to profile.full_name
+  const displayName =
+    [lead?.first_name, lead?.last_name].filter(Boolean).join(" ") ||
+    user.fullName ||
+    user.email ||
+    "";
+
+  const initials = (displayName || "U")
     .split(" ")
     .map((p) => p[0])
     .filter(Boolean)
@@ -50,7 +52,7 @@ export default async function ProfilePage() {
             {initials}
           </div>
           <div className="space-y-1">
-            <p className="text-base font-semibold text-ink">{user.fullName ?? "—"}</p>
+            <p className="text-base font-semibold text-ink">{displayName || "—"}</p>
             <p className="text-sm text-ink-muted">{user.email}</p>
             <p className="flex items-center gap-1 text-[11px] font-mono uppercase tracking-widest text-ink-muted">
               <RoleIcon className="size-3" /> {roleLabel}
