@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 import { setUserRoleAction } from "@/features/staff/server/user-actions";
 
-type Role = "learner" | "content_manager" | "manager" | "admin";
+type Role = "content_manager" | "manager";
 
 export function UserRoleSelect({
   userId,

@@ -8,6 +8,7 @@ export type StaffUserRow = {
   full_name: string | null;
   avatar_url: string | null;
   role: Database["public"]["Enums"]["app_role"];
+  plan_key: string | null;
   email: string | null;
   created_at: string;
 };
@@ -17,7 +18,7 @@ export async function getAllUsers(): Promise<StaffUserRow[]> {
 
   const { data: profiles } = await supabase
     .from("profiles")
-    .select("id, full_name, avatar_url, role, created_at")
+    .select("id, full_name, avatar_url, role, plan_key, created_at")
     .order("created_at", { ascending: false });
   if (!profiles?.length) return [];
 
@@ -40,6 +41,7 @@ export async function getAllUsers(): Promise<StaffUserRow[]> {
     full_name: p.full_name,
     avatar_url: p.avatar_url,
     role: p.role,
+    plan_key: p.plan_key ?? null,
     email: emailMap[p.id] ?? null,
     created_at: p.created_at,
   }));
