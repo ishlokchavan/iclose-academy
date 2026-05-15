@@ -4,9 +4,9 @@ import { revalidatePath } from "next/cache";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireMinRole } from "@/lib/auth/guards";
+import { HIRE_STATUSES, type HireStatus } from "@/features/hires/constants";
 
-export const HIRE_STATUSES = ["pending", "reviewing", "shortlisted", "hired", "rejected"] as const;
-export type HireStatus = (typeof HIRE_STATUSES)[number];
+export type { HireStatus };
 
 export async function updateHireStatusAction(
   id: string,

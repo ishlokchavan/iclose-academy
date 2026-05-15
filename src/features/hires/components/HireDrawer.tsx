@@ -4,11 +4,10 @@ import { ExternalLink, FileText, Instagram, Mail, Phone } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { HIRE_STATUSES, type HireStatus } from "@/features/hires/constants";
 import {
-  HIRE_STATUSES,
   getResumeSignedUrlAction,
   updateHireStatusAction,
-  type HireStatus,
 } from "@/features/hires/server/actions";
 import type { HireApplication } from "@/features/hires/server/queries";
 
