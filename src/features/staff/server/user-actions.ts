@@ -219,17 +219,21 @@ export async function inviteUserAction(
     type: "invite",
     email: parsedEmail.data,
     options: {
-      data: { full_name: name },
+      // Pass role in metadata so handle_new_user trigger sets it correctly,
+      // avoiding any race condition between the trigger and a follow-up upsert.
+      data: { full_name: name, role },
       redirectTo: `${origin}/auth/accept-invite`,
     },
   });
   if (error) return { error: error.message };
 
-  // Upsert profile with correct role — handles race condition with DB trigger
+  // Belt-and-suspenders: also update the profile in case the trigger already
+  // ran before we set the metadata (e.g. existing user re-invited).
   if (data.user?.id) {
     await admin
       .from("profiles")
-      .upsert({ id: data.user.id, role, full_name: name });
+      .update({ role, full_name: name })
+      .eq("id", data.user.id);
   }
 
   // Extract token from action_link and send our own invite URL so we control the redirect
