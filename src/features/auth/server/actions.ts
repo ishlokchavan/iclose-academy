@@ -170,19 +170,31 @@ export async function verifyOtpAction(
     .eq("id", otp.id);
 
   const next = safeNext(formData.get("next"));
-  const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ""}`;
 
-  // Generate a one-time magic link via admin API to create the Supabase session
+  // Generate a magic link server-side to get a short-lived token_hash,
+  // then verify it directly on the server — this sets the session cookie
+  // without any browser redirect through Supabase's servers (avoids the
+  // redirect-URL whitelist requirement).
   const { data, error: linkError } = await admin.auth.admin.generateLink({
     type: "magiclink",
     email,
-    options: { redirectTo },
   });
   if (linkError || !data?.properties?.action_link) {
     return { error: "Sign-in failed. Please try again." };
   }
 
-  redirect(data.properties.action_link);
+  const tokenHash = new URL(data.properties.action_link).searchParams.get("token");
+  if (!tokenHash) return { error: "Sign-in failed. Please try again." };
+
+  const supabase = await createSupabaseServerClient();
+  const { error: verifyError } = await supabase.auth.verifyOtp({
+    token_hash: tokenHash,
+    type: "magiclink",
+  });
+  if (verifyError) return { error: "Sign-in failed. Please try again." };
+
+  revalidatePath("/", "layout");
+  redirect(next ?? await getRoleLanding(supabase));
 }
 
 // ----------------------------------------------------------------------------
