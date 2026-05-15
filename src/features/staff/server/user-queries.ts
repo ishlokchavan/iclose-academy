@@ -40,29 +40,31 @@ export async function getAllUsers(): Promise<StaffUserRow[]> {
   // Use admin Auth API to get emails — more reliable than user_emails view
   const emailMap: Record<string, string | null> = {};
   try {
-    const profileIds = profiles.map((p) => p.id);
-    // listUsers paginates at 1000 by default; fetch enough to cover all profiles
-    const { data: authData } = await admin.auth.admin.listUsers({ perPage: 1000 });
+    const profileIds = new Set(profiles.map((p) => p.id));
+    const { data: authData, error: authError } =
+      await admin.auth.admin.listUsers({ perPage: 1000 });
+    if (authError) console.error("[user-queries] listUsers error:", authError);
     if (authData?.users) {
       for (const u of authData.users) {
-        if (profileIds.includes(u.id)) {
+        if (profileIds.has(u.id)) {
           emailMap[u.id] = u.email ?? null;
         }
       }
     }
-  } catch {
-    // admin auth API unavailable — leave emails null
+  } catch (e) {
+    console.error("[user-queries] listUsers threw:", e);
   }
 
-  // Fetch all leads and key by email
+  // Fetch all leads via admin client (bypasses RLS) and key by email
   let leadsMap: Record<string, LeadData> = {};
   const allEmails = Object.values(emailMap).filter(Boolean) as string[];
   if (allEmails.length > 0) {
     try {
-      const { data: leads } = await supabase
+      const { data: leads, error: leadsError } = await admin
         .from("leads")
         .select("email, first_name, last_name, phone, source, is_verified, verified_at, created_at")
         .in("email", allEmails);
+      if (leadsError) console.error("[user-queries] leads error:", leadsError);
       if (Array.isArray(leads)) {
         leadsMap = Object.fromEntries(
           leads.map((l) => [
