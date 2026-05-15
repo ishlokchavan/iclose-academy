@@ -37,18 +37,21 @@ export async function getAllUsers(): Promise<StaffUserRow[]> {
     .order("created_at", { ascending: false });
   if (!profiles?.length) return [];
 
-  // Use admin client so RLS on user_emails view doesn't block email lookup
-  let emailMap: Record<string, string | null> = {};
+  // Use admin Auth API to get emails — more reliable than user_emails view
+  const emailMap: Record<string, string | null> = {};
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data } = await (admin as any).from("user_emails").select("id, email");
-    if (Array.isArray(data)) {
-      emailMap = Object.fromEntries(
-        (data as Array<{ id: string; email: string | null }>).map((r) => [r.id, r.email]),
-      );
+    const profileIds = profiles.map((p) => p.id);
+    // listUsers paginates at 1000 by default; fetch enough to cover all profiles
+    const { data: authData } = await admin.auth.admin.listUsers({ perPage: 1000 });
+    if (authData?.users) {
+      for (const u of authData.users) {
+        if (profileIds.includes(u.id)) {
+          emailMap[u.id] = u.email ?? null;
+        }
+      }
     }
   } catch {
-    // view missing — leave emails null
+    // admin auth API unavailable — leave emails null
   }
 
   // Fetch all leads and key by email
