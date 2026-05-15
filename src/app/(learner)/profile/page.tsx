@@ -74,6 +74,7 @@ export default async function ProfilePage() {
           initialLastName={initialLastName}
           initialEmail={user.email ?? ""}
           initialPhone={initialPhone}
+          roleLabel={roleLabel}
         />
       </section>
 

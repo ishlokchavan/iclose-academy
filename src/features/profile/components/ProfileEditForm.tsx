@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CheckCircle2, Mail } from "lucide-react";
+import { CheckCircle2, Mail, Pencil } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,52 +13,123 @@ type Props = {
   initialLastName: string;
   initialEmail: string;
   initialPhone: string;
+  roleLabel: string;
 };
+
+function FieldRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-[100px_1fr] gap-x-3 py-2.5">
+      <span className="text-[12px] font-medium text-ink-muted pt-px">{label}</span>
+      <span className="text-[13px] text-ink break-words">
+        {value || <span className="text-ink-muted">—</span>}
+      </span>
+    </div>
+  );
+}
 
 export function ProfileEditForm({
   initialFirstName,
   initialLastName,
   initialEmail,
   initialPhone,
+  roleLabel,
 }: Props) {
+  const [isEditing, setIsEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [verificationSent, setVerificationSent] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const [form, setForm] = useState({
+  const [committed, setCommitted] = useState({
     first_name: initialFirstName,
     last_name: initialLastName,
     email: initialEmail,
     phone: initialPhone,
   });
+  const [form, setForm] = useState(committed);
+
+  const fullName = [committed.first_name, committed.last_name].filter(Boolean).join(" ");
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
     setError(null);
+  }
+
+  function handleEdit() {
+    setForm(committed);
+    setError(null);
     setSaved(false);
+    setVerificationSent(false);
+    setIsEditing(true);
+  }
+
+  function handleCancel() {
+    setForm(committed);
+    setError(null);
+    setIsEditing(false);
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setSaved(false);
+    setVerificationSent(false);
 
     startTransition(async () => {
       const result = await updateOwnProfileAction(form);
       if (result.error) {
         setError(result.error);
-      } else if (result.emailVerificationSent && result.newEmail) {
+        return;
+      }
+
+      setCommitted(form);
+      setSaved(true);
+      setIsEditing(false);
+
+      if (result.emailVerificationSent && result.newEmail) {
         setVerificationSent(true);
         setPendingEmail(result.newEmail);
-        setSaved(true);
-      } else {
-        setSaved(true);
       }
     });
   }
 
+  // ─── View mode ────────────────────────────────────────────────────────────
+  if (!isEditing) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-xl border border-hairline bg-surface-subtle/50 divide-y divide-hairline px-4">
+          <FieldRow label="Name" value={fullName} />
+          <FieldRow label="Phone" value={committed.phone} />
+          <FieldRow label="Email" value={committed.email} />
+          <FieldRow label="Role" value={roleLabel} />
+        </div>
+
+        {verificationSent && pendingEmail && (
+          <div className="flex items-start gap-2.5 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2.5">
+            <Mail className="size-3.5 mt-0.5 shrink-0 text-blue-600" />
+            <p className="text-[12px] text-blue-700">
+              Verification email sent to <strong>{pendingEmail}</strong>. Check your inbox to confirm the change.
+            </p>
+          </div>
+        )}
+
+        {saved && !verificationSent && (
+          <div className="flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 px-3 py-2">
+            <CheckCircle2 className="size-3.5 shrink-0 text-green-600" />
+            <p className="text-[12px] text-green-700">Profile updated.</p>
+          </div>
+        )}
+
+        <Button type="button" variant="secondary" onClick={handleEdit}>
+          <Pencil className="size-3.5" />
+          Edit details
+        </Button>
+      </div>
+    );
+  }
+
+  // ─── Edit mode ────────────────────────────────────────────────────────────
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
@@ -121,25 +192,14 @@ export function ProfileEditForm({
         </p>
       )}
 
-      {verificationSent && pendingEmail && (
-        <div className="flex items-start gap-2.5 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2.5">
-          <Mail className="size-3.5 mt-0.5 shrink-0 text-blue-600" />
-          <p className="text-[12px] text-blue-700">
-            Verification email sent to <strong>{pendingEmail}</strong>. Check your inbox to confirm the change.
-          </p>
-        </div>
-      )}
-
-      {saved && !verificationSent && (
-        <div className="flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 px-3 py-2">
-          <CheckCircle2 className="size-3.5 shrink-0 text-green-600" />
-          <p className="text-[12px] text-green-700">Profile updated.</p>
-        </div>
-      )}
-
-      <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
-        {isPending ? "Saving…" : "Save changes"}
-      </Button>
+      <div className="flex gap-2">
+        <Button type="submit" disabled={isPending}>
+          {isPending ? "Saving…" : "Save changes"}
+        </Button>
+        <Button type="button" variant="secondary" onClick={handleCancel} disabled={isPending}>
+          Cancel
+        </Button>
+      </div>
     </form>
   );
 }
