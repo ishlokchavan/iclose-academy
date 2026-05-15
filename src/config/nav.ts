@@ -79,8 +79,8 @@ export const MANAGER_NAV: NavSection[] = [
   {
     label: "Content",
     items: [
-      { label: "Educators",  href: "/manage/educators", icon: "users" },
-      { label: "Categories",  href: "/manage/taxonomy",  icon: "tags" },
+      { label: "Educators",  href: "/manage/educators", icon: "users",  mobile: true },
+      { label: "Categories", href: "/manage/taxonomy",  icon: "tags",   mobile: true },
     ],
   },
 ];
@@ -93,7 +93,7 @@ export const ADMIN_NAV: NavSection[] = [
   {
     label: "Platform",
     items: [
-      { label: "Users", href: "/manage/users", icon: "users" },
+      { label: "Users", href: "/manage/users", icon: "users", mobile: true },
     ],
   },
 ];
