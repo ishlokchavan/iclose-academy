@@ -12,7 +12,8 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
   deleteUserAction,
   setUserRoleAction,
-  updateLeadFieldsAction,
+  updateLearnerAction,
+  updateUserEmailAction,
   updateUserNameAction,
 } from "@/features/staff/server/user-actions";
 import type { StaffUserRow } from "@/features/staff/server/user-queries";
@@ -92,19 +93,21 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 // ─── Edit form state types ────────────────────────────────────────────────────
 
 type LearnerEditState = {
-  full_name: string;
   first_name: string;
   last_name: string;
+  email: string;
   phone: string;
 };
 
 type StaffEditState = {
   full_name: string;
+  email: string;
   role: StaffRole;
 };
 
 type AdminEditState = {
   full_name: string;
+  email: string;
 };
 
 // ─── Main drawer body ─────────────────────────────────────────────────────────
@@ -132,69 +135,69 @@ function DrawerBody({
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deletePending, startDeleteTransition] = useTransition();
 
-  // Learner edit state
+  const displayEmail = user.email ?? user.lead?.email ?? "";
+
+  // Learner edit state — full_name is auto-computed from first + last on save
   const [learnerEdit, setLearnerEdit] = useState<LearnerEditState>({
-    full_name: user.full_name ?? "",
     first_name: user.lead?.first_name ?? "",
     last_name: user.lead?.last_name ?? "",
+    email: displayEmail,
     phone: user.lead?.phone ?? "",
   });
 
   // Staff edit state
   const [staffEdit, setStaffEdit] = useState<StaffEditState>({
     full_name: user.full_name ?? "",
+    email: displayEmail,
     role: (["manager", "content_manager"].includes(user.role) ? user.role : "manager") as StaffRole,
   });
 
   // Admin edit state
   const [adminEdit, setAdminEdit] = useState<AdminEditState>({
     full_name: user.full_name ?? "",
+    email: displayEmail,
   });
 
   function cancelEdit() {
     setEditing(false);
     setSaveError(null);
     setLearnerEdit({
-      full_name: user.full_name ?? "",
       first_name: user.lead?.first_name ?? "",
       last_name: user.lead?.last_name ?? "",
+      email: displayEmail,
       phone: user.lead?.phone ?? "",
     });
     setStaffEdit({
       full_name: user.full_name ?? "",
+      email: displayEmail,
       role: (["manager", "content_manager"].includes(user.role) ? user.role : "manager") as StaffRole,
     });
-    setAdminEdit({ full_name: user.full_name ?? "" });
+    setAdminEdit({ full_name: user.full_name ?? "", email: displayEmail });
   }
 
   function saveChanges() {
     setSaveError(null);
     startTransition(async () => {
       if (isLearner) {
-        const nameChanged = learnerEdit.full_name.trim() !== (user.full_name ?? "");
-        const leadChanged =
-          learnerEdit.first_name.trim() !== (user.lead?.first_name ?? "") ||
-          learnerEdit.last_name.trim() !== (user.lead?.last_name ?? "") ||
-          learnerEdit.phone.trim() !== (user.lead?.phone ?? "");
-
-        if (nameChanged) {
-          const r = await updateUserNameAction(user.id, learnerEdit.full_name);
-          if (r.error) { setSaveError(r.error); return; }
-        }
-        if (leadChanged && user.email) {
-          const r = await updateLeadFieldsAction(user.email, {
-            first_name: learnerEdit.first_name || null,
-            last_name: learnerEdit.last_name || null,
-            phone: learnerEdit.phone || null,
-          });
-          if (r.error) { setSaveError(r.error); return; }
-        }
+        const r = await updateLearnerAction(user.id, displayEmail || null, {
+          first_name: learnerEdit.first_name,
+          last_name: learnerEdit.last_name,
+          email: learnerEdit.email,
+          phone: learnerEdit.phone,
+        });
+        if (r.error) { setSaveError(r.error); return; }
       } else if (isStaff) {
         const nameChanged = staffEdit.full_name.trim() !== (user.full_name ?? "");
         const roleChanged = staffEdit.role !== user.role;
+        const emailChanged =
+          staffEdit.email.trim().toLowerCase() !== displayEmail.toLowerCase();
 
         if (nameChanged) {
           const r = await updateUserNameAction(user.id, staffEdit.full_name);
+          if (r.error) { setSaveError(r.error); return; }
+        }
+        if (emailChanged) {
+          const r = await updateUserEmailAction(user.id, staffEdit.email);
           if (r.error) { setSaveError(r.error); return; }
         }
         if (roleChanged) {
@@ -203,8 +206,14 @@ function DrawerBody({
         }
       } else if (isAdmin && !isSelf) {
         const nameChanged = adminEdit.full_name.trim() !== (user.full_name ?? "");
+        const emailChanged =
+          adminEdit.email.trim().toLowerCase() !== displayEmail.toLowerCase();
         if (nameChanged) {
           const r = await updateUserNameAction(user.id, adminEdit.full_name);
+          if (r.error) { setSaveError(r.error); return; }
+        }
+        if (emailChanged) {
+          const r = await updateUserEmailAction(user.id, adminEdit.email);
           if (r.error) { setSaveError(r.error); return; }
         }
       }
@@ -255,30 +264,33 @@ function DrawerBody({
             {isLearner && (
               <div className="space-y-3">
                 <EditField
-                  label="Full name"
-                  value={learnerEdit.full_name}
-                  onChange={(v) => setLearnerEdit((s) => ({ ...s, full_name: v }))}
+                  label="First name"
+                  value={learnerEdit.first_name}
+                  onChange={(v) => setLearnerEdit((s) => ({ ...s, first_name: v }))}
                 />
-                {user.lead && (
-                  <>
-                    <EditField
-                      label="First name"
-                      value={learnerEdit.first_name}
-                      onChange={(v) => setLearnerEdit((s) => ({ ...s, first_name: v }))}
-                    />
-                    <EditField
-                      label="Last name"
-                      value={learnerEdit.last_name}
-                      onChange={(v) => setLearnerEdit((s) => ({ ...s, last_name: v }))}
-                    />
-                    <EditField
-                      label="Phone"
-                      value={learnerEdit.phone}
-                      placeholder="+971 50 123 4567"
-                      onChange={(v) => setLearnerEdit((s) => ({ ...s, phone: v }))}
-                    />
-                  </>
-                )}
+                <EditField
+                  label="Last name"
+                  value={learnerEdit.last_name}
+                  onChange={(v) => setLearnerEdit((s) => ({ ...s, last_name: v }))}
+                />
+                <EditField
+                  label="Email"
+                  type="email"
+                  value={learnerEdit.email}
+                  placeholder="user@example.com"
+                  onChange={(v) => setLearnerEdit((s) => ({ ...s, email: v }))}
+                />
+                <EditField
+                  label="Phone"
+                  value={learnerEdit.phone}
+                  placeholder="+971 50 123 4567"
+                  onChange={(v) => setLearnerEdit((s) => ({ ...s, phone: v }))}
+                />
+                <p className="text-[11px] text-ink-muted">
+                  Display name will be set to <strong className="text-ink">
+                    {[learnerEdit.first_name.trim(), learnerEdit.last_name.trim()].filter(Boolean).join(" ") || "—"}
+                  </strong>
+                </p>
               </div>
             )}
 
@@ -288,6 +300,12 @@ function DrawerBody({
                   label="Full name"
                   value={staffEdit.full_name}
                   onChange={(v) => setStaffEdit((s) => ({ ...s, full_name: v }))}
+                />
+                <EditField
+                  label="Email"
+                  type="email"
+                  value={staffEdit.email}
+                  onChange={(v) => setStaffEdit((s) => ({ ...s, email: v }))}
                 />
                 {!isSelf && (
                   <div className="space-y-1.5">
@@ -306,11 +324,19 @@ function DrawerBody({
             )}
 
             {isAdmin && !isSelf && (
-              <EditField
-                label="Full name"
-                value={adminEdit.full_name}
-                onChange={(v) => setAdminEdit({ full_name: v })}
-              />
+              <div className="space-y-3">
+                <EditField
+                  label="Full name"
+                  value={adminEdit.full_name}
+                  onChange={(v) => setAdminEdit((s) => ({ ...s, full_name: v }))}
+                />
+                <EditField
+                  label="Email"
+                  type="email"
+                  value={adminEdit.email}
+                  onChange={(v) => setAdminEdit((s) => ({ ...s, email: v }))}
+                />
+              </div>
             )}
 
             {saveError && <p className="text-[12px] text-destructive">{saveError}</p>}
@@ -445,17 +471,20 @@ function EditField({
   label,
   value,
   placeholder,
+  type,
   onChange,
 }: {
   label: string;
   value: string;
   placeholder?: string;
+  type?: string;
   onChange: (v: string) => void;
 }) {
   return (
     <div className="space-y-1.5">
       <Label className="text-[12px] font-medium text-ink-muted">{label}</Label>
       <Input
+        type={type}
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}

@@ -99,6 +99,92 @@ export async function updateLeadFieldsAction(
   return {};
 }
 
+// ─── Update learner (combined: profile.full_name, lead fields, auth email) ────
+export async function updateLearnerAction(
+  userId: string,
+  currentEmail: string | null,
+  fields: {
+    first_name?: string;
+    last_name?: string;
+    phone?: string;
+    email?: string;
+  },
+): Promise<ActionResult> {
+  await requireMinRole("admin");
+
+  const first = fields.first_name?.trim() ?? "";
+  const last = fields.last_name?.trim() ?? "";
+  const phone = fields.phone?.trim();
+  const newEmail = fields.email?.trim().toLowerCase();
+
+  // Validate email if provided
+  if (newEmail !== undefined) {
+    const ok = z.string().email().safeParse(newEmail);
+    if (!ok.success) return { error: "Enter a valid email address." };
+  }
+
+  const fullName = [first, last].filter(Boolean).join(" ") || null;
+  const admin = createSupabaseAdminClient();
+
+  // 1. Update auth email if changed
+  if (newEmail && newEmail !== currentEmail?.toLowerCase()) {
+    const { error } = await admin.auth.admin.updateUserById(userId, {
+      email: newEmail,
+      email_confirm: true,
+    });
+    if (error) return { error: error.message };
+  }
+
+  // 2. Update profile full_name (computed from first + last)
+  if (fullName) {
+    const { error } = await admin
+      .from("profiles")
+      .update({ full_name: fullName })
+      .eq("id", userId);
+    if (error) return { error: error.message };
+  }
+
+  // 3. Update lead row (match by currentEmail, set new email if changed)
+  if (currentEmail) {
+    const emailIsChanging = !!newEmail && newEmail !== currentEmail.toLowerCase();
+    // Use admin to bypass RLS; ignore "no row" — lead may not exist
+    await admin
+      .from("leads")
+      .update({
+        ...(fields.first_name !== undefined && { first_name: first || null }),
+        ...(fields.last_name !== undefined && { last_name: last || null }),
+        ...(phone !== undefined && { phone: phone || "" }),
+        ...(emailIsChanging && { email: newEmail }),
+        ...(fullName !== null && { name: fullName }),
+      })
+      .eq("email", currentEmail);
+  }
+
+  revalidatePath("/manage/users");
+  return {};
+}
+
+// ─── Update staff/admin email (auth only — no lead row) ──────────────────────
+export async function updateUserEmailAction(
+  userId: string,
+  newEmail: string,
+): Promise<ActionResult> {
+  await requireMinRole("admin");
+
+  const parsed = z.string().email().safeParse(newEmail.trim().toLowerCase());
+  if (!parsed.success) return { error: "Enter a valid email address." };
+
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin.auth.admin.updateUserById(userId, {
+    email: parsed.data,
+    email_confirm: true,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath("/manage/users");
+  return {};
+}
+
 // ─── Delete user ──────────────────────────────────────────────────────────────
 export async function deleteUserAction(userId: string): Promise<ActionResult> {
   const caller = await requireMinRole("admin");
