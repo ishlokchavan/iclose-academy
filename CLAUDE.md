@@ -1,4 +1,4 @@
-# iClose Academy — Claude System Context
+# iClose Academy — Claude System Context 
 
 ## Product Philosophy
 
