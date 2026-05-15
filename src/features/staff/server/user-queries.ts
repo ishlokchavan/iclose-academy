@@ -37,23 +37,24 @@ export async function getAllUsers(): Promise<StaffUserRow[]> {
     .order("created_at", { ascending: false });
   if (!profiles?.length) return [];
 
-  // Use admin Auth API to get emails — more reliable than user_emails view
+  // Fetch each user's email individually via admin API. Slower than
+  // listUsers but resilient to bad rows in auth.users that 500 the bulk endpoint.
   const emailMap: Record<string, string | null> = {};
-  try {
-    const profileIds = new Set(profiles.map((p) => p.id));
-    const { data: authData, error: authError } =
-      await admin.auth.admin.listUsers({ perPage: 1000 });
-    if (authError) console.error("[user-queries] listUsers error:", authError);
-    if (authData?.users) {
-      for (const u of authData.users) {
-        if (profileIds.has(u.id)) {
-          emailMap[u.id] = u.email ?? null;
-        }
-      }
-    }
-  } catch (e) {
-    console.error("[user-queries] listUsers threw:", e);
-  }
+  const results = await Promise.all(
+    profiles.map((p) =>
+      admin.auth.admin
+        .getUserById(p.id)
+        .then(({ data, error }) => {
+          if (error) console.error(`[user-queries] getUserById(${p.id}):`, error.message);
+          return { id: p.id, email: data?.user?.email ?? null };
+        })
+        .catch((e) => {
+          console.error(`[user-queries] getUserById(${p.id}) threw:`, e);
+          return { id: p.id, email: null };
+        }),
+    ),
+  );
+  for (const r of results) emailMap[r.id] = r.email;
 
   // Fetch all leads via admin client (bypasses RLS) and key by email
   let leadsMap: Record<string, LeadData> = {};
