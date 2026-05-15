@@ -6,6 +6,8 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { signOutAction } from "@/features/auth/server/actions";
 import { requireUser } from "@/lib/auth/guards";
 import { ROLE_LABEL } from "@/config/nav";
+import { getOwnLeadData } from "@/features/profile/server/actions";
+import { ProfileEditForm } from "@/features/profile/components/ProfileEditForm";
 
 export const metadata: Metadata = { title: "Profile" };
 
@@ -14,24 +16,29 @@ export default async function ProfilePage() {
   const RoleIcon = ROLE_LABEL[user.role].icon;
   const roleLabel = ROLE_LABEL[user.role].label;
 
+  const lead = user.email ? await getOwnLeadData(user.email) : null;
+
+  const initials = (user.fullName ?? user.email ?? "U")
+    .split(" ")
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
   return (
     <div className="space-y-8">
       <PageHeader
         eyebrow="Account"
         title="Your profile"
-        description="Identity, role, and session controls."
+        description="Manage your personal details and contact information."
       />
 
+      {/* Identity card */}
       <section className="rounded-lg border border-hairline bg-surface-raised p-6">
         <div className="flex items-center gap-4">
           <div className="grid size-14 place-items-center rounded-full border border-hairline bg-surface-subtle text-lg font-semibold text-ink">
-            {(user.fullName ?? user.email ?? "U")
-              .split(" ")
-              .map((p) => p[0])
-              .filter(Boolean)
-              .slice(0, 2)
-              .join("")
-              .toUpperCase()}
+            {initials}
           </div>
           <div className="space-y-1">
             <p className="text-base font-semibold text-ink">{user.fullName ?? "—"}</p>
@@ -43,10 +50,27 @@ export default async function ProfilePage() {
         </div>
       </section>
 
+      {/* Edit personal details */}
+      <section className="rounded-lg border border-hairline bg-surface-raised p-6 space-y-4">
+        <div>
+          <h2 className="text-sm font-semibold text-ink">Personal details</h2>
+          <p className="mt-0.5 text-xs text-ink-muted">
+            Update your name, email, and phone number.
+          </p>
+        </div>
+        <ProfileEditForm
+          initialFirstName={lead?.first_name ?? ""}
+          initialLastName={lead?.last_name ?? ""}
+          initialEmail={user.email ?? ""}
+          initialPhone={lead?.phone ?? ""}
+        />
+      </section>
+
+      {/* Session */}
       <section className="rounded-lg border border-hairline bg-surface-raised p-6">
         <h2 className="text-sm font-semibold text-ink">Session</h2>
         <p className="mt-1 text-xs text-ink-muted">
-          Sign out to switch accounts. Profile editing (display name, avatar) lands in Phase 5.
+          Sign out to switch accounts.
         </p>
         <form action={signOutAction} className="mt-4">
           <Button type="submit" variant="secondary">
