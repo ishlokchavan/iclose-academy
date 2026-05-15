@@ -1,5 +1,6 @@
 import {
   Bookmark,
+  Briefcase,
   CircleUserRound,
   Inbox,
   LayoutGrid,
@@ -22,7 +23,8 @@ export type NavIconName =
   | "tags"
   | "users"
   | "shield"
-  | "message-plus";
+  | "message-plus"
+  | "briefcase";
 
 export const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   library:        Library,
@@ -34,6 +36,7 @@ export const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   users:          Users,
   shield:         ShieldCheck,
   "message-plus": MessageSquarePlus,
+  briefcase:      Briefcase,
 };
 
 export type NavItem = {
@@ -71,16 +74,17 @@ export const LEARNER_NAV: NavSection[] = [
 export const MANAGER_NAV: NavSection[] = [
   {
     items: [
-      { label: "Overview",   href: "/manage",           icon: "grid",    mobile: true },
-      { label: "Topics",     href: "/manage/topics",    icon: "library", mobile: true },
-      { label: "Inquiries",  href: "/manage/inquiries", icon: "inbox",   mobile: true },
+      { label: "Overview",   href: "/manage",           icon: "grid",      mobile: true },
+      { label: "Topics",     href: "/manage/topics",    icon: "library",   mobile: true },
+      { label: "Inquiries",  href: "/manage/inquiries", icon: "inbox",     mobile: true },
     ],
   },
   {
     label: "Content",
     items: [
-      { label: "Educators",  href: "/manage/educators", icon: "users",  mobile: true },
-      { label: "Categories", href: "/manage/taxonomy",  icon: "tags",   mobile: true },
+      { label: "Educators",  href: "/manage/educators", icon: "users",     mobile: true },
+      { label: "Categories", href: "/manage/taxonomy",  icon: "tags",      mobile: true },
+      { label: "Hires",      href: "/manage/hires",     icon: "briefcase", mobile: true },
     ],
   },
 ];

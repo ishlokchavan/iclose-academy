@@ -310,6 +310,51 @@ export type Database = {
           },
         ]
       }
+      intern_applications: {
+        Row: {
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          instagram: string | null
+          last_name: string
+          message: string | null
+          phone: string
+          referer: string | null
+          resume_path: string | null
+          status: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          instagram?: string | null
+          last_name: string
+          message?: string | null
+          phone: string
+          referer?: string | null
+          resume_path?: string | null
+          status?: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          instagram?: string | null
+          last_name?: string
+          message?: string | null
+          phone?: string
+          referer?: string | null
+          resume_path?: string | null
+          status?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           created_at: string
