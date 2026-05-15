@@ -18,7 +18,7 @@ export async function getOwnLeadData(email: string) {
   const { data } = await admin
     .from("leads")
     .select("first_name, last_name, phone")
-    .eq("email", email)
+    .ilike("email", email)
     .maybeSingle();
   return data ?? null;
 }
@@ -51,7 +51,7 @@ export async function updateOwnProfileAction(fields: {
       .from("leads")
       .select("email")
       .eq("phone", phone)
-      .neq("email", user.email ?? "")
+      .neq("email", (user.email ?? "").toLowerCase())
       .maybeSingle();
     if (phoneTaken) return { error: "This phone number is already registered to another account." };
   }
@@ -78,17 +78,26 @@ export async function updateOwnProfileAction(fields: {
     await admin.from("profiles").update({ full_name: fullName }).eq("id", user.id);
   }
 
-  // Update lead row (matched by current email)
+  // Update lead row (matched by current email, case-insensitive)
   if (user.email) {
-    await admin
+    const { data: existingLead } = await admin
       .from("leads")
-      .update({
-        first_name: first || null,
-        last_name: last || null,
-        phone: phone || "",
-        ...(fullName && { name: fullName }),
-      })
-      .eq("email", user.email);
+      .select("email")
+      .ilike("email", user.email)
+      .maybeSingle();
+
+    if (existingLead) {
+      await admin
+        .from("leads")
+        .update({
+          first_name: first || null,
+          last_name: last || null,
+          phone: phone || "",
+          ...(fullName && { name: fullName }),
+        })
+        .eq("email", existingLead.email);
+    }
+    // If no lead row exists, we skip — profile.full_name still captures the name.
   }
 
   revalidatePath("/profile");

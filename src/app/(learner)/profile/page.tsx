@@ -18,6 +18,15 @@ export default async function ProfilePage() {
 
   const lead = user.email ? await getOwnLeadData(user.email) : null;
 
+  // Fallback: split full_name into first/last if lead row is missing those fields
+  const nameParts = (user.fullName ?? "").trim().split(/\s+/).filter(Boolean);
+  const fallbackFirst = nameParts[0] ?? "";
+  const fallbackLast = nameParts.slice(1).join(" ");
+
+  const initialFirstName = lead?.first_name ?? fallbackFirst;
+  const initialLastName = lead?.last_name ?? fallbackLast;
+  const initialPhone = lead?.phone ?? "";
+
   const initials = (user.fullName ?? user.email ?? "U")
     .split(" ")
     .map((p) => p[0])
@@ -59,10 +68,10 @@ export default async function ProfilePage() {
           </p>
         </div>
         <ProfileEditForm
-          initialFirstName={lead?.first_name ?? ""}
-          initialLastName={lead?.last_name ?? ""}
+          initialFirstName={initialFirstName}
+          initialLastName={initialLastName}
           initialEmail={user.email ?? ""}
-          initialPhone={lead?.phone ?? ""}
+          initialPhone={initialPhone}
         />
       </section>
 
