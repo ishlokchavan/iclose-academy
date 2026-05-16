@@ -1,7 +1,8 @@
 "use client";
 
 import { Eye, EyeOff } from "lucide-react";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { createBrowserClient } from "@supabase/ssr";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,12 +11,52 @@ import { Spinner } from "@/components/ui/spinner";
 import { resetPasswordAction, type ActionState } from "@/features/auth/server/actions";
 
 export function ResetPasswordForm() {
+  const [sessionReady, setSessionReady] = useState(false);
+  const [sessionError, setSessionError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get("access_token");
+    const refreshToken = params.get("refresh_token");
+    const type = params.get("type");
+
+    if (accessToken && refreshToken && type === "recovery") {
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      );
+      supabase.auth
+        .setSession({ access_token: accessToken, refresh_token: refreshToken })
+        .then(({ error }) => {
+          if (error) setSessionError(error.message);
+          else setSessionReady(true);
+        });
+    } else {
+      // No hash tokens — user is already signed in (regular password change)
+      setSessionReady(true);
+    }
+  }, []);
+
   const [state, action, pending] = useActionState<ActionState, FormData>(
     resetPasswordAction,
     null,
   );
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  if (sessionError) {
+    return (
+      <p className="text-[13px] text-destructive" role="alert">
+        {sessionError} — please request a new invite.
+      </p>
+    );
+  }
+
+  if (!sessionReady) {
+    return <p className="text-[15px] text-ink-muted">Verifying your link…</p>;
+  }
+
 
   return (
     <div className="space-y-6">
