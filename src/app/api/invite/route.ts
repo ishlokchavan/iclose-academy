@@ -1,6 +1,6 @@
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { sendInviteEmail } from '@/lib/email/send-invite-email';
-import { NextRequest, NextResponse } from 'next/server';
-
 
 export const runtime = 'nodejs';
 
@@ -20,8 +20,11 @@ export async function POST(req: NextRequest) {
         await sendInviteEmail(email, full_name ?? '', set_password_url);
 
         return NextResponse.json({ ok: true });
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error('invite email error:', err);
-        return NextResponse.json({ error: err?.message ?? 'Failed to send email' }, { status: 500 });
+        return NextResponse.json(
+            { error: err instanceof Error ? err.message : 'Failed to send email' },
+            { status: 500 },
+        );
     }
 }
