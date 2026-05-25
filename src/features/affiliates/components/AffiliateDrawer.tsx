@@ -1,11 +1,12 @@
 "use client";
 
-import { Check, Copy, ExternalLink, Link2 } from "lucide-react";
-import { useState } from "react";
+import { Check, Copy, ExternalLink, Link2, Trash2 } from "lucide-react";
+import { useState, useTransition } from "react";
 
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
 import { referralLink } from "../constants";
+import { deleteAffiliateAction } from "../server/actions";
 import type { AffiliateDetail } from "../server/queries";
 
 function fmtDateTime(iso: string) {
@@ -22,23 +23,30 @@ function fmtDate(iso: string) {
 }
 
 export function AffiliateDrawer({
-  open, loading, detail, onClose,
+  open, loading, detail, onClose, onDeleted,
 }: {
   open: boolean;
   loading: boolean;
   detail: AffiliateDetail | null;
   onClose: () => void;
+  onDeleted: (leadId: string) => void;
 }) {
   return (
     <Sheet open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <SheetContent title="Affiliate details" description="View referrals and click activity">
-        <Body loading={loading} detail={detail} />
+        <Body loading={loading} detail={detail} onDeleted={onDeleted} />
       </SheetContent>
     </Sheet>
   );
 }
 
-function Body({ loading, detail }: { loading: boolean; detail: AffiliateDetail | null }) {
+function Body({
+  loading, detail, onDeleted,
+}: {
+  loading: boolean;
+  detail: AffiliateDetail | null;
+  onDeleted: (leadId: string) => void;
+}) {
   if (loading || !detail) {
     return (
       <div className="flex flex-1 items-center justify-center py-20">
@@ -168,6 +176,88 @@ function Body({ loading, detail }: { loading: boolean; detail: AffiliateDetail |
           </ul>
         )}
       </div>
+
+      {/* Danger zone */}
+      <DangerZone leadId={lead.id} email={lead.email} referredCount={lead.referral_count} onDeleted={onDeleted} />
+    </div>
+  );
+}
+
+function DangerZone({
+  leadId, email, referredCount, onDeleted,
+}: {
+  leadId: string;
+  email: string;
+  referredCount: number;
+  onDeleted: (leadId: string) => void;
+}) {
+  const [confirm, setConfirm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function handleDelete() {
+    setError(null);
+    startTransition(async () => {
+      const res = await deleteAffiliateAction(leadId);
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      onDeleted(leadId);
+    });
+  }
+
+  return (
+    <div className="border-t border-hairline bg-rose-50/30 px-6 py-5">
+      <p className="eyebrow mb-2 text-rose-700">Danger zone</p>
+      {!confirm ? (
+        <>
+          <p className="mb-3 text-[12px] text-ink-muted">
+            Deletes the lead row, frees the email and phone for re-registration, and detaches any
+            downstream referrals (their <code className="font-mono text-[11px]">referred_by_code</code> stays for the record).
+          </p>
+          <button
+            type="button"
+            onClick={() => setConfirm(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-[12px] font-medium text-rose-700 transition-colors hover:bg-rose-50"
+          >
+            <Trash2 className="size-3.5" /> Delete affiliate
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="mb-3 text-[13px] font-medium text-ink">
+            Delete {email}?
+            {referredCount > 0 ? (
+              <span className="block text-[12px] font-normal text-ink-muted">
+                {referredCount} downstream referral{referredCount === 1 ? "" : "s"} will be detached.
+              </span>
+            ) : null}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={pending}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-rose-600 bg-rose-600 px-3 py-1.5 text-[12px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {pending ? <Spinner className="size-3" /> : <Trash2 className="size-3.5" />}
+              Confirm delete
+            </button>
+            <button
+              type="button"
+              onClick={() => { setConfirm(false); setError(null); }}
+              disabled={pending}
+              className="rounded-lg border border-hairline bg-white px-3 py-1.5 text-[12px] font-medium text-ink-muted transition-colors hover:text-ink"
+            >
+              Cancel
+            </button>
+          </div>
+          {error ? (
+            <p className="mt-2 text-[12px] text-rose-700">{error}</p>
+          ) : null}
+        </>
+      )}
     </div>
   );
 }

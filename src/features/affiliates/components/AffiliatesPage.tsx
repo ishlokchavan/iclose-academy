@@ -47,10 +47,12 @@ export function AffiliatesPage({
   const [selectedId, setId]   = useState<string | null>(null);
   const [detail, setDetail]   = useState<AffiliateDetail | null>(null);
   const [detailLoading, setDL] = useState(false);
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     let list = affiliates.filter((a) => {
+      if (deletedIds.has(a.id)) return false;
       if (filter === "active"   && a.referral_count === 0) return false;
       if (filter === "referred" && !a.referred_by_code)    return false;
       if (!q) return true;
@@ -67,7 +69,7 @@ export function AffiliatesPage({
     if (sort === "recent")    list = [...list].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
 
     return list;
-  }, [affiliates, search, sort, filter]);
+  }, [affiliates, search, sort, filter, deletedIds]);
 
   async function openDetail(id: string) {
     setId(id);
@@ -90,7 +92,7 @@ export function AffiliatesPage({
     <>
       {/* Overview tiles */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile icon={Users}              label="Affiliates"        value={overview.totalAffiliates}   tone="blue" />
+        <StatTile icon={Users}              label="Affiliates"        value={overview.totalAffiliates - deletedIds.size} tone="blue" />
         <StatTile icon={MousePointerClick}  label="Total clicks"      value={overview.totalClicks}       tone="emerald" />
         <StatTile icon={Wallet}             label="Referred leads"    value={overview.totalReferrals}    tone="amber" />
         <StatTile icon={Users}              label="Active referrers"  value={overview.activeAffiliates}  tone="violet" />
@@ -204,6 +206,14 @@ export function AffiliatesPage({
         loading={detailLoading}
         detail={detail}
         onClose={close}
+        onDeleted={(id) => {
+          setDeletedIds((prev) => {
+            const next = new Set(prev);
+            next.add(id);
+            return next;
+          });
+          close();
+        }}
       />
     </>
   );
