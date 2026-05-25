@@ -107,7 +107,16 @@ export async function updateOwnProfileAction(fields: {
         source: "profile_self_edit",
         referred_by_code: referredByCode,
       });
-      if (leadErr) return { error: leadErr.message };
+      if (leadErr) {
+        if (leadErr.code === "23505") {
+          // Unique constraint — email or phone collision with another lead.
+          if (leadErr.message.includes("leads_phone_unique")) {
+            return { error: "This phone number is already registered to another account." };
+          }
+          return { error: "An account with this email already exists." };
+        }
+        return { error: leadErr.message };
+      }
     }
   }
 
