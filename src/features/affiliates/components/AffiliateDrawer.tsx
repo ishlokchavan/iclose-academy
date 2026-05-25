@@ -56,8 +56,13 @@ function Body({
   }
 
   const { lead, ancestors, downstreamTree, directReferralCount, totalDownstreamCount, clicks } = detail;
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, "") ?? "";
+  // Referral links point at the marketing site, not the academy app origin.
+  // Falls back to NEXT_PUBLIC_SITE_URL if the marketing var is unset.
+  const siteUrl = (
+    process.env.NEXT_PUBLIC_MARKETING_URL ??
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    ""
+  ).replace(/\/+$/, "");
   const link = lead.referral_code && siteUrl ? referralLink(siteUrl, lead.referral_code) : null;
 
   return (

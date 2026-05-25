@@ -20,9 +20,14 @@ export default async function ProfilePage() {
 
   const lead = user.email ? await getOwnLeadData(user.email) : null;
   const affiliate = user.email ? await getAffiliateByEmail(user.email) : null;
-  // Always use the configured public site URL for shareable links — never the
-  // request host (which would leak localhost or preview URLs).
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://iclose.ae").replace(/\/+$/, "");
+  // Referral links point at the marketing site (where the lead form lives),
+  // not the academy app origin. Falls back to NEXT_PUBLIC_SITE_URL so envs
+  // that haven't split the two domains keep working.
+  const siteUrl = (
+    process.env.NEXT_PUBLIC_MARKETING_URL ??
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    "https://iclose.ae"
+  ).replace(/\/+$/, "");
 
   const initialFirstName = lead?.first_name ?? "";
   const initialLastName = lead?.last_name ?? "";
