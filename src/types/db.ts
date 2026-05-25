@@ -1097,6 +1097,34 @@ export type Database = {
           unique_visitors: number
         }[]
       }
+      referral_tree_descendants: {
+        Args: { p_code: string; p_max_depth?: number }
+        Returns: {
+          id: string
+          email: string
+          name: string
+          referral_code: string | null
+          referred_by_code: string | null
+          referred_by_lead_id: string | null
+          created_at: string
+          is_verified: boolean
+          depth: number
+          parent_id: string | null
+        }[]
+      }
+      referral_tree_ancestors: {
+        Args: { p_lead_id: string; p_max_depth?: number }
+        Returns: {
+          id: string
+          email: string
+          name: string
+          referral_code: string | null
+          referred_by_code: string | null
+          referred_by_lead_id: string | null
+          created_at: string
+          depth: number
+        }[]
+      }
       insert_notification: {
         Args: {
           p_actor_id: string

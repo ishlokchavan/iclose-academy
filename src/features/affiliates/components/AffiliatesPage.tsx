@@ -6,10 +6,11 @@ import { useMemo, useState } from "react";
 import { AffiliateDrawer } from "./AffiliateDrawer";
 import type { AffiliateDetail, AffiliateOverview, AffiliateRow } from "../server/queries";
 
-type SortKey = "referrals" | "clicks" | "recent";
+type SortKey = "referrals" | "network" | "clicks" | "recent";
 
 const SORTS: { value: SortKey; label: string }[] = [
-  { value: "referrals", label: "Most referrals" },
+  { value: "referrals", label: "Most direct" },
+  { value: "network",   label: "Largest network" },
   { value: "clicks",    label: "Most clicks" },
   { value: "recent",    label: "Newest" },
 ];
@@ -65,6 +66,7 @@ export function AffiliatesPage({
     });
 
     if (sort === "referrals") list = [...list].sort((a, b) => b.referral_count - a.referral_count);
+    if (sort === "network")   list = [...list].sort((a, b) => b.network_size - a.network_size);
     if (sort === "clicks")    list = [...list].sort((a, b) => b.clicks - a.clicks);
     if (sort === "recent")    list = [...list].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
 
@@ -137,7 +139,8 @@ export function AffiliatesPage({
               <th className="px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-ink-muted">Affiliate</th>
               <th className="hidden px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-ink-muted sm:table-cell">Code</th>
               <th className="px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-ink-muted text-right">Clicks</th>
-              <th className="px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-ink-muted text-right">Referrals</th>
+              <th className="px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-ink-muted text-right">Direct</th>
+              <th className="hidden px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-ink-muted text-right sm:table-cell">Network</th>
               <th className="hidden px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-ink-muted md:table-cell">Joined</th>
               <th className="w-10" />
             </tr>
@@ -145,7 +148,7 @@ export function AffiliatesPage({
           <tbody>
             {visible.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-5 py-10 text-center text-[13px] text-ink-muted">
+                <td colSpan={7} className="px-5 py-10 text-center text-[13px] text-ink-muted">
                   No affiliates match your filters.
                 </td>
               </tr>
@@ -181,6 +184,18 @@ export function AffiliatesPage({
                     <span className={a.referral_count > 0 ? "font-semibold text-ink" : "text-ink-muted"}>
                       {a.referral_count}
                     </span>
+                  </td>
+                  <td className="hidden px-5 py-3.5 text-right text-[14px] tabular-nums sm:table-cell">
+                    {a.network_size > a.referral_count ? (
+                      <span className="inline-flex items-center gap-1">
+                        <span className="font-medium text-ink">{a.network_size}</span>
+                        <span className="rounded-full bg-violet-50 px-1.5 text-[10px] font-medium text-violet-700">
+                          +{a.network_size - a.referral_count}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className={a.network_size > 0 ? "text-ink" : "text-ink-muted"}>{a.network_size}</span>
+                    )}
                   </td>
                   <td className="hidden px-5 py-3.5 text-[13px] text-ink-muted md:table-cell">
                     {formatDate(a.created_at)}

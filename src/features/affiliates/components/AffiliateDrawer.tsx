@@ -1,13 +1,13 @@
 "use client";
 
-import { Check, Copy, ExternalLink, Link2, Trash2 } from "lucide-react";
+import { Check, ChevronRight, Copy, CornerDownRight, ExternalLink, Link2, Trash2 } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
 import { referralLink } from "../constants";
 import { deleteAffiliateAction } from "../server/actions";
-import type { AffiliateDetail } from "../server/queries";
+import type { AffiliateDetail, TreeNode } from "../server/queries";
 
 function fmtDateTime(iso: string) {
   return new Date(iso).toLocaleString("en-GB", {
@@ -55,7 +55,7 @@ function Body({
     );
   }
 
-  const { lead, referredLeads, referrer, clicks } = detail;
+  const { lead, ancestors, downstreamTree, directReferralCount, totalDownstreamCount, clicks } = detail;
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, "") ?? "";
   const link = lead.referral_code && siteUrl ? referralLink(siteUrl, lead.referral_code) : null;
@@ -79,10 +79,11 @@ function Body({
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 border-b border-hairline px-6 py-5">
+      <div className="grid grid-cols-4 gap-3 border-b border-hairline px-6 py-5">
         <Stat label="Clicks"   value={lead.clicks} />
         <Stat label="Unique"   value={lead.unique_visitors} />
-        <Stat label="Referrals" value={lead.referral_count} accent />
+        <Stat label="Direct"   value={directReferralCount} accent />
+        <Stat label="Network"  value={totalDownstreamCount} />
       </div>
 
       {/* Code + link */}
@@ -100,51 +101,56 @@ function Body({
         </div>
       ) : null}
 
-      {/* Referrer (who brought this affiliate in) */}
-      {referrer ? (
+      {/* Upstream chain — root → ... → direct referrer */}
+      {ancestors.length > 0 ? (
         <div className="border-b border-hairline px-6 py-5">
-          <p className="eyebrow mb-2">Referred by</p>
-          <div className="rounded-lg border border-hairline bg-surface-subtle/40 p-3">
-            <p className="text-[14px] font-medium text-ink">{referrer.name || referrer.email}</p>
-            <p className="text-[12px] text-ink-muted">{referrer.email}</p>
-            {referrer.referral_code ? (
-              <p className="mt-1 text-[11px] text-ink-muted">
-                Code{" "}
-                <code className="rounded border border-hairline bg-surface px-1 py-0.5 font-mono">
-                  {referrer.referral_code}
-                </code>
-              </p>
-            ) : null}
+          <p className="eyebrow mb-2">Upstream chain</p>
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[12px]">
+            {[...ancestors].reverse().map((a, i, arr) => (
+              <span key={a.id} className="inline-flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface-subtle px-2 py-0.5">
+                  <span className="font-medium text-ink truncate max-w-[140px]">{a.name || a.email}</span>
+                  {a.referral_code ? (
+                    <code className="font-mono text-[10px] text-ink-muted">{a.referral_code}</code>
+                  ) : null}
+                </span>
+                {i < arr.length - 1 || true ? (
+                  <ChevronRight className="size-3 text-ink-muted shrink-0" />
+                ) : null}
+              </span>
+            ))}
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5">
+              <span className="font-semibold text-ink truncate max-w-[160px]">
+                {lead.name || lead.email}
+              </span>
+              <span className="text-[10px] font-medium uppercase tracking-wider text-accent">You</span>
+            </span>
           </div>
+          <p className="mt-2 text-[11px] text-ink-muted">
+            {ancestors.length === 1
+              ? "1 tier above"
+              : `${ancestors.length} tiers above`}
+          </p>
         </div>
       ) : null}
 
-      {/* Referred leads */}
+      {/* Downstream tree */}
       <div className="border-b border-hairline px-6 py-5">
-        <p className="eyebrow mb-2">Referred leads ({referredLeads.length})</p>
-        {referredLeads.length === 0 ? (
+        <div className="mb-2 flex items-baseline justify-between gap-3">
+          <p className="eyebrow">Downstream tree</p>
+          <p className="text-[11px] text-ink-muted">
+            {directReferralCount} direct
+            {totalDownstreamCount > directReferralCount
+              ? ` · ${totalDownstreamCount} total`
+              : null}
+          </p>
+        </div>
+        {downstreamTree.length === 0 ? (
           <p className="text-[13px] text-ink-muted">No one has signed up with this code yet.</p>
         ) : (
-          <ul className="space-y-2">
-            {referredLeads.map((r) => (
-              <li key={r.id} className="rounded-lg border border-hairline bg-surface-subtle/40 p-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-[14px] font-medium text-ink truncate">
-                      {r.name || r.email}
-                    </p>
-                    <p className="text-[12px] text-ink-muted truncate">{r.email}</p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="text-[11px] text-ink-muted">{fmtDate(r.created_at)}</p>
-                    {r.is_verified ? (
-                      <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
-                        <Check className="size-2.5" /> Verified
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-              </li>
+          <ul className="space-y-1.5">
+            {downstreamTree.map((node) => (
+              <TreeRow key={node.id} node={node} indent={0} />
             ))}
           </ul>
         )}
@@ -259,6 +265,57 @@ function DangerZone({
         </>
       )}
     </div>
+  );
+}
+
+function TreeRow({ node, indent }: { node: TreeNode; indent: number }) {
+  const childCount = node.children.length;
+  return (
+    <li>
+      <div
+        className="flex items-center gap-2 rounded-lg border border-hairline bg-surface-subtle/40 px-3 py-2"
+        style={{ marginLeft: indent * 18 }}
+      >
+        {indent > 0 ? (
+          <CornerDownRight className="size-3 shrink-0 text-ink-muted" aria-hidden />
+        ) : null}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <span className="truncate text-[13px] font-medium text-ink">
+              {node.name || node.email}
+            </span>
+            <span className="inline-flex shrink-0 items-center rounded-full border border-hairline bg-surface px-1.5 text-[10px] font-medium text-ink-muted">
+              T{node.depth}
+            </span>
+            {node.is_verified ? (
+              <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-emerald-50 px-1.5 text-[10px] font-medium text-emerald-700">
+                <Check className="size-2.5" />
+              </span>
+            ) : null}
+          </div>
+          <div className="mt-0.5 flex items-center gap-2 text-[11px] text-ink-muted">
+            <span className="truncate">{node.email}</span>
+            {node.referral_code ? (
+              <code className="shrink-0 rounded border border-hairline bg-surface px-1 font-mono text-[10px]">
+                {node.referral_code}
+              </code>
+            ) : null}
+          </div>
+        </div>
+        {childCount > 0 ? (
+          <span className="shrink-0 rounded-full bg-ink/5 px-1.5 text-[10px] font-medium text-ink-muted">
+            +{childCount}
+          </span>
+        ) : null}
+      </div>
+      {childCount > 0 ? (
+        <ul className="mt-1.5 space-y-1.5">
+          {node.children.map((child) => (
+            <TreeRow key={child.id} node={child} indent={indent + 1} />
+          ))}
+        </ul>
+      ) : null}
+    </li>
   );
 }
 

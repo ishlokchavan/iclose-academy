@@ -8,7 +8,8 @@ export type AffiliateRow = {
   email: string;
   phone: string | null;
   referral_code: string | null;
-  referral_count: number;
+  referral_count: number;       // direct referrals
+  network_size: number;         // total downstream (all tiers)
   created_at: string;
   source: string | null;
   referred_by_code: string | null;
@@ -17,21 +18,35 @@ export type AffiliateRow = {
   unique_visitors: number;
 };
 
+export type TreeNode = {
+  id: string;
+  name: string | null;
+  email: string;
+  referral_code: string | null;
+  created_at: string;
+  is_verified: boolean;
+  depth: number;
+  children: TreeNode[];
+};
+
+export type AncestorNode = {
+  id: string;
+  name: string | null;
+  email: string;
+  referral_code: string | null;
+  depth: number; // 2 = direct referrer, 3 = referrer's referrer, ...
+};
+
 export type AffiliateDetail = {
   lead: AffiliateRow;
-  referredLeads: Array<{
-    id: string;
-    name: string | null;
-    email: string;
-    created_at: string;
-    is_verified: boolean;
-  }>;
-  referrer: {
-    id: string;
-    name: string | null;
-    email: string;
-    referral_code: string | null;
-  } | null;
+  /** Flat count of direct downstream referrals (depth = 1). */
+  directReferralCount: number;
+  /** Total nodes in the entire downstream tree. */
+  totalDownstreamCount: number;
+  /** Forest of direct referrals; each may have nested children. */
+  downstreamTree: TreeNode[];
+  /** Upstream chain from immediate referrer (depth 2) up to root. */
+  ancestors: AncestorNode[];
   clicks: Array<{
     id: string;
     created_at: string;
@@ -117,12 +132,47 @@ export async function getAllAffiliates(): Promise<AffiliateRow[]> {
     }
   }
 
+  // Build a code -> direct-children map once, then DFS to compute total
+  // downstream size for each lead. O(N) for the index, O(N) per DFS in the
+  // worst case which is fine for the expected dataset size.
+  const childrenByCode = new Map<string, string[]>();
+  for (const l of leads) {
+    if (!l.referred_by_code) continue;
+    const parentCode = l.referred_by_code;
+    if (!l.referral_code) continue;
+    const arr = childrenByCode.get(parentCode) ?? [];
+    arr.push(l.referral_code);
+    childrenByCode.set(parentCode, arr);
+  }
+  const directCountByCode = new Map<string, number>();
+  for (const l of leads) {
+    if (l.referred_by_code) {
+      directCountByCode.set(l.referred_by_code, (directCountByCode.get(l.referred_by_code) ?? 0) + 1);
+    }
+  }
+  function networkSize(rootCode: string | null): number {
+    if (!rootCode) return 0;
+    let total = 0;
+    const stack = [rootCode];
+    const seen = new Set<string>();
+    while (stack.length) {
+      const code = stack.pop()!;
+      if (seen.has(code)) continue;
+      seen.add(code);
+      const kids = childrenByCode.get(code) ?? [];
+      total += kids.length;
+      for (const k of kids) stack.push(k);
+    }
+    return total;
+  }
+
   return leads.map((l) => {
     const stats = l.referral_code ? clickStats[l.referral_code] : undefined;
     return {
       ...l,
       clicks: stats?.clicks ?? 0,
       unique_visitors: stats?.unique ?? 0,
+      network_size: networkSize(l.referral_code),
     };
   });
 }
@@ -140,21 +190,11 @@ export async function getAffiliateById(leadId: string): Promise<AffiliateDetail 
 
   if (error || !lead) return null;
 
-  const [referredLeadsRes, referrerRes, clicksRes] = await Promise.all([
+  const [descRes, ancRes, clicksRes] = await Promise.all([
     lead.referral_code
-      ? admin
-          .from("leads")
-          .select("id, name, email, created_at, is_verified")
-          .eq("referred_by_code", lead.referral_code)
-          .order("created_at", { ascending: false })
-      : Promise.resolve({ data: [] as Array<{ id: string; name: string | null; email: string; created_at: string; is_verified: boolean }> }),
-    lead.referred_by_lead_id
-      ? admin
-          .from("leads")
-          .select("id, name, email, referral_code")
-          .eq("id", lead.referred_by_lead_id)
-          .maybeSingle()
-      : Promise.resolve({ data: null as { id: string; name: string | null; email: string; referral_code: string | null } | null }),
+      ? admin.rpc("referral_tree_descendants", { p_code: lead.referral_code, p_max_depth: 10 })
+      : Promise.resolve({ data: [] }),
+    admin.rpc("referral_tree_ancestors", { p_lead_id: leadId, p_max_depth: 10 }),
     lead.referral_code
       ? admin
           .from("referral_clicks")
@@ -172,14 +212,70 @@ export async function getAffiliateById(leadId: string): Promise<AffiliateDetail 
     clickRows.map((r) => r.visitor_id).filter(Boolean) as string[],
   ).size;
 
+  // Build the downstream forest from the flat depth-ordered rows.
+  const descendants = (descRes.data ?? []) as Array<{
+    id: string;
+    email: string;
+    name: string | null;
+    referral_code: string | null;
+    referred_by_code: string | null;
+    referred_by_lead_id: string | null;
+    created_at: string;
+    is_verified: boolean;
+    depth: number;
+    parent_id: string | null;
+  }>;
+  const byId = new Map<string, TreeNode>();
+  for (const d of descendants) {
+    byId.set(d.id, {
+      id: d.id,
+      name: d.name,
+      email: d.email,
+      referral_code: d.referral_code,
+      created_at: d.created_at,
+      is_verified: d.is_verified,
+      depth: d.depth,
+      children: [],
+    });
+  }
+  const forest: TreeNode[] = [];
+  for (const d of descendants) {
+    const node = byId.get(d.id)!;
+    if (d.depth === 1) {
+      forest.push(node);
+    } else if (d.parent_id && byId.has(d.parent_id)) {
+      byId.get(d.parent_id)!.children.push(node);
+    } else {
+      // Parent missing — surface at root rather than dropping the node.
+      forest.push(node);
+    }
+  }
+
+  const ancestors = ((ancRes.data ?? []) as Array<{
+    id: string;
+    email: string;
+    name: string | null;
+    referral_code: string | null;
+    depth: number;
+  }>).map((a) => ({
+    id: a.id,
+    name: a.name,
+    email: a.email,
+    referral_code: a.referral_code,
+    depth: a.depth,
+  }));
+
   return {
     lead: {
       ...lead,
       clicks: clickRows.length,
       unique_visitors: uniqueVisitors,
+      network_size: descendants.length,
     },
-    referredLeads: referredLeadsRes.data ?? [],
-    referrer: referrerRes.data ?? null,
+    directReferralCount: forest.length,
+    totalDownstreamCount: descendants.length,
+    downstreamTree: forest,
+    ancestors,
     clicks: clickRows,
   };
 }
@@ -188,6 +284,7 @@ export async function getAffiliateById(leadId: string): Promise<AffiliateDetail 
 export async function getAffiliateByEmail(email: string): Promise<{
   code: string;
   referralCount: number;
+  networkSize: number;
   clicks: number;
   uniqueVisitors: number;
   leadId: string;
@@ -204,14 +301,16 @@ export async function getAffiliateByEmail(email: string): Promise<{
   const lead = data?.[0];
   if (!lead?.referral_code) return null;
 
-  const { data: stats } = await admin
-    .rpc("referral_stats_for_code", { p_code: lead.referral_code })
-    .maybeSingle();
+  const [{ data: stats }, { data: tree }] = await Promise.all([
+    admin.rpc("referral_stats_for_code", { p_code: lead.referral_code }).maybeSingle(),
+    admin.rpc("referral_tree_descendants", { p_code: lead.referral_code, p_max_depth: 10 }),
+  ]);
 
   return {
     code: lead.referral_code,
     leadId: lead.id,
     referralCount: lead.referral_count ?? 0,
+    networkSize: Array.isArray(tree) ? tree.length : 0,
     clicks: Number(stats?.total_clicks ?? 0),
     uniqueVisitors: Number(stats?.unique_visitors ?? 0),
   };

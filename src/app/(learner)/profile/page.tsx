@@ -72,6 +72,7 @@ export default async function ProfilePage() {
         <ReferralCard
           code={affiliate.code}
           referralCount={affiliate.referralCount}
+          networkSize={affiliate.networkSize}
           clicks={affiliate.clicks}
           uniqueVisitors={affiliate.uniqueVisitors}
           siteUrl={siteUrl}

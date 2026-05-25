@@ -8,12 +8,13 @@ import { referralLink } from "../constants";
 type Props = {
   code: string;
   referralCount: number;
+  networkSize: number;
   clicks: number;
   uniqueVisitors: number;
   siteUrl: string;
 };
 
-export function ReferralCard({ code, referralCount, clicks, uniqueVisitors, siteUrl }: Props) {
+export function ReferralCard({ code, referralCount, networkSize, clicks, uniqueVisitors, siteUrl }: Props) {
   const link = referralLink(siteUrl, code);
   const [copied, setCopied] = useState(false);
 
@@ -79,10 +80,11 @@ export function ReferralCard({ code, referralCount, clicks, uniqueVisitors, site
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 border-t border-hairline pt-4">
-        <Stat icon={MousePointerClick} label="Clicks" value={clicks} />
-        <Stat icon={Users}              label="Unique" value={uniqueVisitors} />
-        <Stat icon={Users}              label="Joined" value={referralCount} accent />
+      <div className="grid grid-cols-4 gap-3 border-t border-hairline pt-4">
+        <Stat icon={MousePointerClick} label="Clicks"  value={clicks} />
+        <Stat icon={Users}              label="Unique"  value={uniqueVisitors} />
+        <Stat icon={Users}              label="Direct"  value={referralCount} accent />
+        <Stat icon={Users}              label="Network" value={networkSize} />
       </div>
     </section>
   );
