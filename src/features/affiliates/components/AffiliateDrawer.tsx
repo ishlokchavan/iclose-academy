@@ -49,10 +49,8 @@ function Body({ loading, detail }: { loading: boolean; detail: AffiliateDetail |
 
   const { lead, referredLeads, referrer, clicks } = detail;
   const siteUrl =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : process.env.NEXT_PUBLIC_SITE_URL ?? "";
-  const link = lead.referral_code ? referralLink(siteUrl, lead.referral_code) : null;
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, "") ?? "";
+  const link = lead.referral_code && siteUrl ? referralLink(siteUrl, lead.referral_code) : null;
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">

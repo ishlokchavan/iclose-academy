@@ -20,7 +20,9 @@ export default async function ProfilePage() {
 
   const lead = user.email ? await getOwnLeadData(user.email) : null;
   const affiliate = user.email ? await getAffiliateByEmail(user.email) : null;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  // Always use the configured public site URL for shareable links — never the
+  // request host (which would leak localhost or preview URLs).
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://iclose.ae").replace(/\/+$/, "");
 
   const initialFirstName = lead?.first_name ?? "";
   const initialLastName = lead?.last_name ?? "";
