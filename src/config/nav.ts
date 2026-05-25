@@ -6,6 +6,7 @@ import {
   LayoutGrid,
   Library,
   MessageSquarePlus,
+  Share2,
   ShieldCheck,
   Tags,
   Users,
@@ -24,7 +25,8 @@ export type NavIconName =
   | "users"
   | "shield"
   | "message-plus"
-  | "briefcase";
+  | "briefcase"
+  | "share";
 
 export const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   library:        Library,
@@ -37,6 +39,7 @@ export const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   shield:         ShieldCheck,
   "message-plus": MessageSquarePlus,
   briefcase:      Briefcase,
+  share:          Share2,
 };
 
 export type NavItem = {
@@ -85,6 +88,12 @@ export const MANAGER_NAV: NavSection[] = [
       { label: "Educators",  href: "/manage/educators", icon: "users",     mobile: true },
       { label: "Categories", href: "/manage/taxonomy",  icon: "tags",      mobile: true },
       { label: "Hires",      href: "/manage/hires",     icon: "briefcase", mobile: true },
+    ],
+  },
+  {
+    label: "Growth",
+    items: [
+      { label: "Affiliates", href: "/manage/affiliates", icon: "share" },
     ],
   },
 ];

@@ -417,6 +417,10 @@ export type Database = {
           phone: string
           plan_key: string
           referer: string | null
+          referral_code: string | null
+          referral_count: number
+          referred_by_code: string | null
+          referred_by_lead_id: string | null
           source: string | null
           user_agent: string | null
           verification_token: string | null
@@ -435,6 +439,10 @@ export type Database = {
           phone: string
           plan_key?: string
           referer?: string | null
+          referral_code?: string | null
+          referral_count?: number
+          referred_by_code?: string | null
+          referred_by_lead_id?: string | null
           source?: string | null
           user_agent?: string | null
           verification_token?: string | null
@@ -453,6 +461,10 @@ export type Database = {
           phone?: string
           plan_key?: string
           referer?: string | null
+          referral_code?: string | null
+          referral_count?: number
+          referred_by_code?: string | null
+          referred_by_lead_id?: string | null
           source?: string | null
           user_agent?: string | null
           verification_token?: string | null
@@ -465,6 +477,70 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "membership_plans"
             referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "leads_referred_by_lead_id_fkey"
+            columns: ["referred_by_lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_clicks: {
+        Row: {
+          code: string
+          converted_lead_id: string | null
+          country: string | null
+          created_at: string
+          id: string
+          ip_hash: string | null
+          landing_path: string | null
+          lead_id: string | null
+          referer: string | null
+          user_agent: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          code: string
+          converted_lead_id?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          landing_path?: string | null
+          lead_id?: string | null
+          referer?: string | null
+          user_agent?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          code?: string
+          converted_lead_id?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          landing_path?: string | null
+          lead_id?: string | null
+          referer?: string | null
+          user_agent?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_clicks_converted_lead_id_fkey"
+            columns: ["converted_lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_clicks_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1009,8 +1085,18 @@ export type Database = {
       }
     }
     Functions: {
+      bump_referral_count: { Args: { p_lead_id: string }; Returns: undefined }
       current_user_role: { Args: never; Returns: string }
+      generate_referral_code: { Args: { p_len?: number }; Returns: string }
       get_auth_user_id_by_email: { Args: { p_email: string }; Returns: string }
+      referral_stats_for_code: {
+        Args: { p_code: string }
+        Returns: {
+          total_clicks: number
+          total_referrals: number
+          unique_visitors: number
+        }[]
+      }
       insert_notification: {
         Args: {
           p_actor_id: string

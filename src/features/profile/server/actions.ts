@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { readReferralCookie } from "@/features/affiliates/server/cookies";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/guards";
@@ -96,6 +97,7 @@ export async function updateOwnProfileAction(fields: {
         .ilike("email", user.email);
       if (leadErr) return { error: leadErr.message };
     } else {
+      const referredByCode = await readReferralCookie();
       const { error: leadErr } = await admin.from("leads").insert({
         email: user.email,
         name: fullName ?? "",
@@ -103,6 +105,7 @@ export async function updateOwnProfileAction(fields: {
         first_name: first || null,
         last_name: last || null,
         source: "profile_self_edit",
+        referred_by_code: referredByCode,
       });
       if (leadErr) return { error: leadErr.message };
     }

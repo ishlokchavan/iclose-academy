@@ -3,6 +3,8 @@ import { LogOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/patterns/PageHeader";
+import { ReferralCard } from "@/features/affiliates/components/ReferralCard";
+import { getAffiliateByEmail } from "@/features/affiliates/server/queries";
 import { signOutAction } from "@/features/auth/server/actions";
 import { requireUser } from "@/lib/auth/guards";
 import { ROLE_LABEL } from "@/config/nav";
@@ -17,6 +19,8 @@ export default async function ProfilePage() {
   const roleLabel = ROLE_LABEL[user.role].label;
 
   const lead = user.email ? await getOwnLeadData(user.email) : null;
+  const affiliate = user.email ? await getAffiliateByEmail(user.email) : null;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
 
   const initialFirstName = lead?.first_name ?? "";
   const initialLastName = lead?.last_name ?? "";
@@ -60,6 +64,17 @@ export default async function ProfilePage() {
           </div>
         </div>
       </section>
+
+      {/* Referral link — every lead gets one auto-generated */}
+      {affiliate ? (
+        <ReferralCard
+          code={affiliate.code}
+          referralCount={affiliate.referralCount}
+          clicks={affiliate.clicks}
+          uniqueVisitors={affiliate.uniqueVisitors}
+          siteUrl={siteUrl}
+        />
+      ) : null}
 
       {/* Edit personal details */}
       <section className="rounded-lg border border-hairline bg-surface-raised p-6 space-y-4">
