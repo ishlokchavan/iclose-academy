@@ -1,13 +1,8 @@
 import { Brand } from "@/components/shell/Brand";
 import { UserMenu } from "@/components/shell/UserMenu";
-import { NotificationBell } from "@/features/notifications/components/NotificationBell";
-import { PushPermissionButton } from "@/features/notifications/components/PushPermissionButton";
-import { getNotifications } from "@/features/notifications/server/queries";
 import type { SessionUser } from "@/lib/auth/session";
 
 export async function TopBar({ user }: { user: SessionUser }) {
-  const initialNotifications = await getNotifications(30);
-
   return (
     <header
       className={[
@@ -24,8 +19,8 @@ export async function TopBar({ user }: { user: SessionUser }) {
       <div className="hidden lg:block" />
 
       <div className="flex flex-1 items-center justify-end gap-3">
-        <PushPermissionButton />
-        <NotificationBell initialNotifications={initialNotifications} />
+        {/* Notifications + push permission are temporarily hidden — will be
+            re-enabled once browser push is wired up. */}
         <UserMenu user={user} />
       </div>
     </header>

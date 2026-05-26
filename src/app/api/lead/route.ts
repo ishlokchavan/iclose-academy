@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { normalizeCode } from "@/features/affiliates/constants";
+import { logAudit } from "@/features/audit/server/log";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -86,6 +87,13 @@ export async function POST(req: NextRequest) {
     .limit(1);
 
   if (existing && existing.length > 0 && existing[0]) {
+    await logAudit({
+      action: "lead.create_via_api",
+      entity_type: "lead",
+      entity_id: existing[0].id,
+      diff: { duplicate: true, email: d.email },
+      source: "api",
+    });
     return NextResponse.json(
       { ok: true, referralCode: existing[0].referral_code, duplicate: true },
       { headers },
@@ -111,6 +119,12 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) {
+    await logAudit({
+      action: "lead.create_via_api",
+      entity_type: "lead",
+      diff: { error: error.message, code: error.code, email: d.email },
+      source: "api",
+    });
     // Unique violation on phone — different account already uses it
     if (error.code === "23505") {
       return NextResponse.json(
@@ -123,6 +137,17 @@ export async function POST(req: NextRequest) {
       { status: 500, headers },
     );
   }
+
+  await logAudit({
+    action: "lead.create_via_api",
+    entity_type: "lead",
+    diff: {
+      email: d.email,
+      referred_by_code: referredByCode,
+      referral_code: inserted?.referral_code ?? null,
+    },
+    source: "api",
+  });
 
   return NextResponse.json(
     { ok: true, referralCode: inserted?.referral_code ?? null },

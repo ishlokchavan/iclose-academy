@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { ROLE_LANDING } from "@/config/nav";
+import { logAudit } from "@/features/audit/server/log";
 import { sendOtpEmail } from "@/lib/email/send-otp-email";
 import { sendResetEmail } from "@/lib/email/send-reset-email";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -65,7 +66,18 @@ export async function signUpWithPasswordAction(
       emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/auth/callback`,
     },
   });
-  if (error) return { error: error.message };
+  if (error) {
+    await logAudit({
+      action: "auth.signup",
+      diff: { email: parsed.data.email, ok: false, error: error.message },
+    });
+    return { error: error.message };
+  }
+
+  await logAudit({
+    action: "auth.signup",
+    diff: { email: parsed.data.email, ok: true },
+  });
 
   revalidatePath("/", "layout");
   redirect(safeNext(formData.get("next")) ?? await getRoleLanding(supabase));
@@ -86,7 +98,18 @@ export async function signInWithPasswordAction(
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
-  if (error) return { error: error.message };
+  if (error) {
+    await logAudit({
+      action: "auth.signin",
+      diff: { email: parsed.data.email, ok: false, error: error.message },
+    });
+    return { error: error.message };
+  }
+
+  await logAudit({
+    action: "auth.signin",
+    diff: { email: parsed.data.email, ok: true },
+  });
 
   revalidatePath("/", "layout");
   redirect(safeNext(formData.get("next")) ?? await getRoleLanding(supabase));
@@ -257,6 +280,7 @@ export async function resetPasswordAction(
 // ----------------------------------------------------------------------------
 export async function signOutAction() {
   const supabase = await createSupabaseServerClient();
+  await logAudit({ action: "auth.signout" });
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
   redirect("/sign-in");

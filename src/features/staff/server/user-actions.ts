@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { logAudit } from "@/features/audit/server/log";
 import { sendInviteEmail } from "@/lib/email/send-invite-email";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireMinRole } from "@/lib/auth/guards";
@@ -35,6 +36,13 @@ export async function setUserRoleAction(
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
   const supabase = await createSupabaseServerClient();
+
+  const { data: before } = await supabase
+    .from("profiles")
+    .select("role, full_name")
+    .eq("id", parsed.data.userId)
+    .maybeSingle();
+
   const { error } = await supabase
     .from("profiles")
     .update({ role: parsed.data.role })
@@ -49,6 +57,18 @@ export async function setUserRoleAction(
       p_role: parsed.data.role,
     });
   } catch { /* non-fatal */ }
+
+  await logAudit({
+    action: "profile.role_change",
+    entity_type: "profile",
+    entity_id: parsed.data.userId,
+    diff: {
+      target_name: before?.full_name ?? null,
+      before: before?.role ?? null,
+      after: parsed.data.role,
+    },
+    actor: { id: caller.id, email: caller.email, role: caller.role },
+  });
 
   revalidatePath("/manage/users");
   return {};

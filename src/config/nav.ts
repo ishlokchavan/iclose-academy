@@ -2,6 +2,7 @@ import {
   Bookmark,
   Briefcase,
   CircleUserRound,
+  FileClock,
   Inbox,
   LayoutGrid,
   Library,
@@ -26,7 +27,8 @@ export type NavIconName =
   | "shield"
   | "message-plus"
   | "briefcase"
-  | "share";
+  | "share"
+  | "log";
 
 export const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   library:        Library,
@@ -40,6 +42,7 @@ export const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   "message-plus": MessageSquarePlus,
   briefcase:      Briefcase,
   share:          Share2,
+  log:            FileClock,
 };
 
 export type NavItem = {
@@ -96,20 +99,27 @@ export const MANAGER_NAV: NavSection[] = [
       { label: "Affiliates", href: "/manage/affiliates", icon: "share" },
     ],
   },
-];
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Admin — manager nav + user management
-// ──────────────────────────────────────────────────────────────────────────────
-export const ADMIN_NAV: NavSection[] = [
-  ...MANAGER_NAV,
   {
     label: "Platform",
     items: [
-      { label: "Users", href: "/manage/users", icon: "users", mobile: true },
+      { label: "Audit log", href: "/manage/audit-log", icon: "log" },
     ],
   },
 ];
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Admin — manager nav with Users added into the Platform section
+// ──────────────────────────────────────────────────────────────────────────────
+export const ADMIN_NAV: NavSection[] = MANAGER_NAV.map((section) => {
+  if (section.label !== "Platform") return section;
+  return {
+    ...section,
+    items: [
+      { label: "Users", href: "/manage/users", icon: "users", mobile: true } as NavItem,
+      ...section.items,
+    ],
+  };
+});
 
 export function navForRole(role: AppRole): NavSection[] {
   switch (role) {
