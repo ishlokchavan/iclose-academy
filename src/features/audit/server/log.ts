@@ -33,6 +33,8 @@ export type AuditAction =
   // auth
   | "auth.signin"
   | "auth.signup"
+  | "auth.signup_blocked_pending"
+  | "auth.otp_blocked_pending"
   | "auth.signout"
   | "auth.password_reset_request"
   | "auth.password_reset_complete"

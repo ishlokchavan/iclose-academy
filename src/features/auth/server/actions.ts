@@ -6,6 +6,11 @@ import { redirect } from "next/navigation";
 
 import { ROLE_LANDING } from "@/config/nav";
 import { logAudit } from "@/features/audit/server/log";
+import {
+  authUserExistsForEmail,
+  findEmailInFunnels,
+  SIGNUP_BLOCKED_MESSAGE,
+} from "@/lib/auth/registration-guard";
 import { sendOtpEmail } from "@/lib/email/send-otp-email";
 import { sendResetEmail } from "@/lib/email/send-reset-email";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -56,6 +61,19 @@ export async function signUpWithPasswordAction(
     fullName: formData.get("fullName"),
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+
+  // Refuse self-signup if the email is already on file in any of the four
+  // intake tables. Those people must be onboarded by an admin invite so
+  // they get the right role; letting them self-signup would create an
+  // auth.user with the default 'learner' role regardless of intent.
+  const funnel = await findEmailInFunnels(parsed.data.email);
+  if (funnel.found) {
+    await logAudit({
+      action: "auth.signup_blocked_pending",
+      diff: { email: parsed.data.email, sources: funnel.sources },
+    });
+    return { error: SIGNUP_BLOCKED_MESSAGE };
+  }
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signUp({
@@ -126,6 +144,23 @@ export async function sendOtpAction(
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid email" };
 
   const { email } = parsed.data;
+
+  // The OTP flow doubles as sign-in AND sign-up — verifyOtpAction calls
+  // generateLink({ type: 'magiclink' }) which creates an auth.user if one
+  // doesn't exist. So we have to gate the same as signUpWithPasswordAction:
+  // if no auth.user exists yet and the email is in any intake table, block.
+  const authExists = await authUserExistsForEmail(email);
+  if (!authExists) {
+    const funnel = await findEmailInFunnels(email);
+    if (funnel.found) {
+      await logAudit({
+        action: "auth.otp_blocked_pending",
+        diff: { email, sources: funnel.sources },
+      });
+      return { error: SIGNUP_BLOCKED_MESSAGE };
+    }
+  }
+
   const code = randomInt(100000, 1000000).toString();
   const codeHash = hashCode(code, email);
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
