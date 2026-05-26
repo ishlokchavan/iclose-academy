@@ -242,7 +242,7 @@ export async function inviteUserAction(
       // Pass role in metadata so handle_new_user trigger sets it correctly,
       // avoiding any race condition between the trigger and a follow-up upsert.
       data: { full_name: name, role },
-      redirectTo: `${origin}/auth/accept-invite`,
+      redirectTo: `${origin}/accept-invite`,
     },
   });
   if (error) return { error: error.message };
@@ -262,7 +262,7 @@ export async function inviteUserAction(
     const actionUrl = new URL(data.properties?.action_link ?? "");
     const token = actionUrl.searchParams.get("token");
     if (token) {
-      inviteUrl = `${origin}/auth/accept-invite?token=${encodeURIComponent(token)}&email=${encodeURIComponent(parsedEmail.data)}`;
+      inviteUrl = `${origin}/accept-invite?token=${encodeURIComponent(token)}&email=${encodeURIComponent(parsedEmail.data)}`;
     }
   } catch { /* fall back to action_link */ }
 
