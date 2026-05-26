@@ -21,7 +21,7 @@ export function MemberDrawer({
 }) {
   return (
     <Sheet open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <SheetContent title="Affiliate details" description="View referrals and click activity">
+      <SheetContent title="Member details" description="Full registration and referral activity">
         <Body loading={loading} detail={detail} onDeleted={onDeleted} />
       </SheetContent>
     </Sheet>
@@ -57,18 +57,74 @@ function Body({
     <div className="flex h-full flex-col overflow-y-auto">
       {/* Header */}
       <div className="border-b border-hairline px-6 pb-6 pt-8">
-        <p className="eyebrow">Affiliate</p>
-        <h2 className="mt-1.5 text-[22px] font-bold tracking-tight text-ink">
-          {lead.name || lead.email}
-        </h2>
+        <p className="eyebrow">Member</p>
+        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+          <h2 className="text-[22px] font-bold tracking-tight text-ink">
+            {lead.name || lead.email}
+          </h2>
+          {lead.intent ? (
+            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium capitalize ${
+              lead.intent === "closer"
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                : lead.intent === "buyer"
+                ? "bg-blue-50 text-blue-700 border-blue-200"
+                : "bg-surface-subtle text-ink-muted border-hairline"
+            }`}>
+              {lead.intent}
+            </span>
+          ) : null}
+          {lead.is_verified ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+              <Check className="size-2.5" /> Verified
+            </span>
+          ) : null}
+        </div>
         <p className="text-[13px] text-ink-muted">{lead.email}</p>
         {lead.phone ? (
           <p className="mt-0.5 text-[13px] text-ink-muted">{lead.phone}</p>
         ) : null}
         <p className="mt-3 text-[12px] text-ink-muted">
-          Joined {fmtDate(lead.created_at)}
+          Joined {fmtDateTime(lead.created_at)}
           {lead.source ? ` · via ${lead.source}` : null}
         </p>
+      </div>
+
+      {/* Registration details — everything captured at signup */}
+      <div className="border-b border-hairline px-6 py-5">
+        <p className="eyebrow mb-3">Registration</p>
+        <dl className="grid grid-cols-[110px_1fr] gap-x-4 gap-y-2 text-[12px]">
+          <DetailRow label="First name"  value={lead.first_name} />
+          <DetailRow label="Last name"   value={lead.last_name} />
+          <DetailRow label="Email"       value={lead.email} mono />
+          <DetailRow label="Phone"       value={lead.phone ?? "—"} mono />
+          <DetailRow label="Plan"        value={lead.plan_key} capitalize />
+          <DetailRow label="Intent"      value={lead.intent ?? "—"} capitalize />
+          <DetailRow
+            label="Focus"
+            value={lead.focus && lead.focus.length > 0 ? lead.focus.join(", ") : "—"}
+            capitalize
+          />
+          <DetailRow label="Source"      value={lead.source ?? "—"} />
+          <DetailRow
+            label="Marketing"
+            value={lead.consent_marketing
+              ? `Opted in${lead.consented_at ? ` · ${fmtDateTime(lead.consented_at)}` : ""}`
+              : "Not opted in"}
+          />
+          <DetailRow
+            label="Verified"
+            value={lead.is_verified
+              ? `Yes${lead.verified_at ? ` · ${fmtDateTime(lead.verified_at)}` : ""}`
+              : "No"}
+          />
+          {lead.referer ? (
+            <DetailRow label="Referer"   value={lead.referer} mono breakAll />
+          ) : null}
+          {lead.user_agent ? (
+            <DetailRow label="User agent" value={lead.user_agent} mono breakAll />
+          ) : null}
+          <DetailRow label="Lead ID"     value={lead.id} mono breakAll />
+        </dl>
       </div>
 
       {/* Stats */}
@@ -220,7 +276,7 @@ function DangerZone({
             onClick={() => setConfirm(true)}
             className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-[12px] font-medium text-rose-700 transition-colors hover:bg-rose-50"
           >
-            <Trash2 className="size-3.5" /> Delete affiliate
+            <Trash2 className="size-3.5" /> Delete member
           </button>
         </>
       ) : (
@@ -309,6 +365,34 @@ function TreeRow({ node, indent }: { node: TreeNode; indent: number }) {
         </ul>
       ) : null}
     </li>
+  );
+}
+
+function DetailRow({
+  label, value, mono, capitalize, breakAll,
+}: {
+  label: string;
+  value: string | null | undefined;
+  mono?: boolean;
+  capitalize?: boolean;
+  breakAll?: boolean;
+}) {
+  const display = value && value.length > 0 ? value : "—";
+  const muted = display === "—";
+  return (
+    <>
+      <dt className="text-ink-muted">{label}</dt>
+      <dd
+        className={[
+          muted ? "text-ink-muted/60" : "text-ink",
+          mono ? "font-mono text-[11px]" : "",
+          capitalize ? "capitalize" : "",
+          breakAll ? "break-all" : "",
+        ].join(" ")}
+      >
+        {display}
+      </dd>
+    </>
   );
 }
 

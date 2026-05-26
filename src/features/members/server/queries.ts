@@ -5,9 +5,19 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 export type MemberRow = {
   id: string;
   name: string | null;
+  first_name: string | null;
+  last_name: string | null;
   email: string;
   phone: string | null;
   intent: string | null;        // 'closer' | 'buyer' | 'other' | null (free text)
+  focus: string[] | null;
+  plan_key: string;
+  is_verified: boolean;
+  verified_at: string | null;
+  consent_marketing: boolean;
+  consented_at: string | null;
+  user_agent: string | null;
+  referer: string | null;
   referral_code: string | null;
   referral_count: number;       // direct referrals
   network_size: number;         // total downstream (all tiers)
@@ -18,6 +28,11 @@ export type MemberRow = {
   clicks: number;
   unique_visitors: number;
 };
+
+// Kept as one literal string so Supabase's generated typings can narrow
+// the response shape. Keep both call sites in sync if you edit this.
+const LEAD_FIELDS =
+  "id, name, first_name, last_name, email, phone, intent, focus, plan_key, is_verified, verified_at, consent_marketing, consented_at, user_agent, referer, referral_code, referral_count, created_at, source, referred_by_code, referred_by_lead_id";
 
 export type TreeNode = {
   id: string;
@@ -61,10 +76,10 @@ export type MemberDetail = {
 };
 
 export type MembersOverview = {
-  totalAffiliates: number;
+  totalMembers: number;
   totalClicks: number;
   totalReferrals: number;
-  activeAffiliates: number; // affiliates with ≥1 referral
+  activeReferrers: number; // members with ≥1 referral
 };
 
 export async function getMembersOverview(): Promise<MembersOverview> {
@@ -85,10 +100,10 @@ export async function getMembersOverview(): Promise<MembersOverview> {
     ]);
 
   return {
-    totalAffiliates: leadsCount ?? 0,
+    totalMembers: leadsCount ?? 0,
     totalClicks: clicksCount ?? 0,
     totalReferrals: referralsCount ?? 0,
-    activeAffiliates: activeCount ?? 0,
+    activeReferrers: activeCount ?? 0,
   };
 }
 
@@ -98,7 +113,7 @@ export async function getAllMembers(): Promise<MemberRow[]> {
   const { data: leads, error } = await admin
     .from("leads")
     .select(
-      "id, name, email, phone, intent, referral_code, referral_count, created_at, source, referred_by_code, referred_by_lead_id",
+      LEAD_FIELDS,
     )
     .order("referral_count", { ascending: false })
     .order("created_at", { ascending: false });
@@ -184,7 +199,7 @@ export async function getMemberById(leadId: string): Promise<MemberDetail | null
   const { data: lead, error } = await admin
     .from("leads")
     .select(
-      "id, name, email, phone, intent, referral_code, referral_count, created_at, source, referred_by_code, referred_by_lead_id",
+      LEAD_FIELDS,
     )
     .eq("id", leadId)
     .maybeSingle();

@@ -6,9 +6,9 @@ import { loadMemberDetailAction } from "@/features/members/server/actions";
 import { getMembersOverview, getAllMembers } from "@/features/members/server/queries";
 import { requireMinRole } from "@/lib/auth/guards";
 
-export const metadata: Metadata = { title: "Affiliates" };
+export const metadata: Metadata = { title: "Members" };
 
-export default async function ManageAffiliatesPage() {
+export default async function ManageMembersPage() {
   await requireMinRole("manager");
 
   const [overview, members] = await Promise.all([
@@ -19,9 +19,9 @@ export default async function ManageAffiliatesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Platform"
-        title="Affiliates"
-        description="Every lead has a unique referral code. Track who shares, who clicks, and who joins through whom."
+        eyebrow="Growth"
+        title="Members"
+        description="Everyone who registered on iclose.ae. Each gets a unique referral code automatically — see who they shared with, who clicked, and who joined through whom."
       />
       <MembersPage
         overview={overview}

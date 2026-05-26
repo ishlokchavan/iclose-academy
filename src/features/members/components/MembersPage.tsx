@@ -184,10 +184,10 @@ export function MembersPage({
     <>
       {/* Overview tiles */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile icon={Users}              label="Affiliates"        value={overview.totalAffiliates - deletedIds.size} tone="blue" />
+        <StatTile icon={Users}              label="Members"           value={overview.totalMembers - deletedIds.size} tone="blue" />
         <StatTile icon={MousePointerClick}  label="Total clicks"      value={overview.totalClicks}       tone="emerald" />
-        <StatTile icon={Wallet}             label="Referred leads"    value={overview.totalReferrals}    tone="amber" />
-        <StatTile icon={Users}              label="Active referrers"  value={overview.activeAffiliates}  tone="violet" />
+        <StatTile icon={Wallet}             label="Referred members"  value={overview.totalReferrals}    tone="amber" />
+        <StatTile icon={Users}              label="Active referrers"  value={overview.activeReferrers}   tone="violet" />
       </section>
 
       {/* Quick-filter chips above the table */}
