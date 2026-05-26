@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { normalizeCode } from "@/features/members/constants";
 import { logAudit } from "@/features/audit/server/log";
+import { sendReferralSignupEmail } from "@/lib/email/send-referral-signup-email";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -172,8 +173,79 @@ export async function POST(req: NextRequest) {
     source: "api",
   });
 
+  // Email the referrer ("X just joined through your link"). Fire-and-forget
+  // is fine — the response should not block on SMTP, and the audit log
+  // captures whether the email was attempted.
+  if (referredByCode) {
+    notifyReferrer({
+      admin,
+      referredByCode,
+      referredName: fullName || d.email,
+    }).catch((err) => {
+      console.error("[/api/lead] notifyReferrer failed", err);
+    });
+  }
+
   return NextResponse.json(
     { ok: true, referralCode: inserted?.referral_code ?? null },
     { headers },
   );
+}
+
+async function notifyReferrer({
+  admin,
+  referredByCode,
+  referredName,
+}: {
+  admin: ReturnType<typeof createSupabaseAdminClient>;
+  referredByCode: string;
+  referredName: string;
+}): Promise<void> {
+  const { data: referrer } = await admin
+    .from("leads")
+    .select("email, name, referral_code, referral_count")
+    .eq("referral_code", referredByCode)
+    .maybeSingle();
+
+  if (!referrer?.email || !referrer.referral_code) return;
+
+  const marketingUrl =
+    process.env.NEXT_PUBLIC_MARKETING_URL ??
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    "https://iclose.ae";
+
+  try {
+    await sendReferralSignupEmail({
+      to: referrer.email,
+      referrerName: referrer.name,
+      referredName,
+      totalReferrals: referrer.referral_count,
+      referralCode: referrer.referral_code,
+      marketingUrl,
+    });
+
+    await logAudit({
+      action: "referral.signup_notified",
+      entity_type: "lead",
+      entity_id: referrer.email,
+      diff: {
+        referrer_code: referrer.referral_code,
+        referred_name: referredName,
+        total_referrals: referrer.referral_count,
+      },
+      source: "api",
+    });
+  } catch (err) {
+    await logAudit({
+      action: "referral.signup_notify_failed",
+      entity_type: "lead",
+      entity_id: referrer.email,
+      diff: {
+        referrer_code: referrer.referral_code,
+        error: err instanceof Error ? err.message : String(err),
+      },
+      source: "api",
+    });
+    throw err;
+  }
 }

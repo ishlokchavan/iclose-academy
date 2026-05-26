@@ -3,6 +3,7 @@
 import { Check, Copy, MousePointerClick, Share2, Users } from "lucide-react";
 import { useState } from "react";
 
+import { dataLayerPush } from "@/lib/analytics/gtm";
 import { referralLink } from "../constants";
 
 type Props = {
@@ -22,6 +23,7 @@ export function ReferralCard({ code, referralCount, networkSize, clicks, uniqueV
     try {
       await navigator.clipboard.writeText(link);
       setCopied(true);
+      dataLayerPush({ event: "referral_link_copied", code, surface: "profile" });
       setTimeout(() => setCopied(false), 1500);
     } catch {
       /* ignore */
@@ -36,6 +38,7 @@ export function ReferralCard({ code, referralCount, networkSize, clicks, uniqueV
           text: "Specialist intelligence for operators who close.",
           url: link,
         });
+        dataLayerPush({ event: "referral_link_shared", code, surface: "profile" });
         return;
       } catch {
         /* user canceled */

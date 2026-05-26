@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Fraunces } from "next/font/google";
 
 import "./globals.css";
+import { GoogleTagManagerNoscript, GoogleTagManagerScript } from "@/components/analytics/GoogleTagManager";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { ServiceWorkerRegistration } from "@/components/pwa/ServiceWorkerRegistration";
 
@@ -58,7 +59,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        <GoogleTagManagerScript />
+      </head>
       <body className="min-h-dvh bg-background text-foreground antialiased">
+        <GoogleTagManagerNoscript />
         {children}
         <ServiceWorkerRegistration />
         <InstallPrompt />

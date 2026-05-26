@@ -161,6 +161,8 @@ function Body({
               : null}
           </p>
         </div>
+        {/* Per-tier breakdown — makes the multi-tier reach scannable at a glance */}
+        <TierBreakdown forest={downstreamTree} />
         {downstreamTree.length === 0 ? (
           <p className="text-[13px] text-ink-muted">No one has signed up with this code yet.</p>
         ) : (
@@ -332,6 +334,36 @@ function TreeRow({ node, indent }: { node: TreeNode; indent: number }) {
         </ul>
       ) : null}
     </li>
+  );
+}
+
+function TierBreakdown({ forest }: { forest: TreeNode[] }) {
+  // Count nodes per tier (depth) by walking the forest once.
+  const counts = new Map<number, number>();
+  function walk(nodes: TreeNode[]) {
+    for (const n of nodes) {
+      counts.set(n.depth, (counts.get(n.depth) ?? 0) + 1);
+      walk(n.children);
+    }
+  }
+  walk(forest);
+
+  if (counts.size === 0) return null;
+  const tiers = [...counts.entries()].sort((a, b) => a[0] - b[0]);
+
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-1.5">
+      {tiers.map(([depth, count]) => (
+        <span
+          key={depth}
+          className="inline-flex items-center gap-1 rounded-full border border-hairline bg-surface-subtle px-2 py-0.5 text-[10.5px] font-medium text-ink-muted"
+        >
+          <span className="font-semibold text-ink">T{depth}</span>
+          <span>·</span>
+          <span className="tabular-nums text-ink">{count}</span>
+        </span>
+      ))}
+    </div>
   );
 }
 

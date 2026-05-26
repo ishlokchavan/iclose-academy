@@ -23,6 +23,8 @@ export type AuditAction =
   | "member.delete"
   | "lead.create_via_api"
   | "lead.update"
+  | "referral.signup_notified"
+  | "referral.signup_notify_failed"
   // profile / users
   | "profile.role_change"
   | "profile.plan_change"

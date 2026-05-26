@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { readReferralCookie } from "@/features/members/server/cookies";
+import { sendReferralSignupEmail } from "@/lib/email/send-referral-signup-email";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/guards";
@@ -116,6 +117,35 @@ export async function updateOwnProfileAction(fields: {
           return { error: "An account with this email already exists." };
         }
         return { error: leadErr.message };
+      }
+
+      // If this self-created lead was referred, email the referrer the same
+      // "X just joined" notification the /api/lead path sends. Non-blocking.
+      if (referredByCode) {
+        const marketingUrl =
+          process.env.NEXT_PUBLIC_MARKETING_URL ??
+          process.env.NEXT_PUBLIC_SITE_URL ??
+          "https://iclose.ae";
+        void (async () => {
+          try {
+            const { data: referrer } = await admin
+              .from("leads")
+              .select("email, name, referral_code, referral_count")
+              .eq("referral_code", referredByCode)
+              .maybeSingle();
+            if (!referrer?.email || !referrer.referral_code) return;
+            await sendReferralSignupEmail({
+              to: referrer.email,
+              referrerName: referrer.name,
+              referredName: fullName ?? user.email!,
+              totalReferrals: referrer.referral_count,
+              referralCode: referrer.referral_code,
+              marketingUrl,
+            });
+          } catch (err) {
+            console.error("[profile-self-edit] notifyReferrer failed", err);
+          }
+        })();
       }
     }
   }
