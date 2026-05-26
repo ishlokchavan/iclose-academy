@@ -1,14 +1,19 @@
 "use client";
 
-import { MousePointerClick, Users, Wallet } from "lucide-react";
+import { MousePointerClick, Network, Table as TableIcon, Users, Wallet } from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { useEffect, useMemo, useState } from "react";
 
 import { DataTable } from "@/components/patterns/DataTable";
+import { cn } from "@/lib/utils/cn";
 import { formatDateTime } from "@/lib/utils/date";
 
 import { MemberDrawer } from "./MemberDrawer";
+import { MembersTree } from "./MembersTree";
 import type { MemberDetail, MembersOverview, MemberRow } from "../server/queries";
+
+type ViewMode = "table" | "tree";
+const VIEW_STORAGE_KEY = "iclose.members.view";
 
 function initials(name: string | null, email: string) {
   const src = (name ?? email).trim();
@@ -36,6 +41,20 @@ export function MembersPage({
   const [detailLoading, setDL] = useState(false);
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [filter, setFilter]   = useState<"all" | "active" | "referred">("all");
+  const [view, setView]       = useState<ViewMode>("table");
+
+  // Restore the view preference on first mount only (avoids SSR mismatch).
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(VIEW_STORAGE_KEY);
+      if (stored === "tree" || stored === "table") setView(stored);
+    } catch { /* localStorage unavailable */ }
+  }, []);
+
+  function changeView(next: ViewMode) {
+    setView(next);
+    try { localStorage.setItem(VIEW_STORAGE_KEY, next); } catch { /* ignore */ }
+  }
 
   // Drop optimistic deletions once the server has caught up.
   useEffect(() => {
@@ -190,21 +209,51 @@ export function MembersPage({
         <StatTile icon={Users}              label="Active referrers"  value={overview.activeReferrers}   tone="violet" />
       </section>
 
-      {/* Quick-filter chips above the table */}
-      <div className="mt-8 mb-3 flex items-center gap-1.5 flex-wrap">
-        <Chip on={filter === "all"}      onClick={() => setFilter("all")}>All</Chip>
-        <Chip on={filter === "active"}   onClick={() => setFilter(filter === "active"   ? "all" : "active")}>Has referrals</Chip>
-        <Chip on={filter === "referred"} onClick={() => setFilter(filter === "referred" ? "all" : "referred")}>Was referred</Chip>
+      {/* Toolbar: chip filters (table only) + view toggle */}
+      <div className="mt-8 mb-3 flex items-center gap-2 flex-wrap">
+        {view === "table" ? (
+          <>
+            <Chip on={filter === "all"}      onClick={() => setFilter("all")}>All</Chip>
+            <Chip on={filter === "active"}   onClick={() => setFilter(filter === "active"   ? "all" : "active")}>Has referrals</Chip>
+            <Chip on={filter === "referred"} onClick={() => setFilter(filter === "referred" ? "all" : "referred")}>Was referred</Chip>
+          </>
+        ) : (
+          <p className="text-[12px] text-ink-muted">
+            {members.length} member{members.length === 1 ? "" : "s"} · click any node to open details
+          </p>
+        )}
+        <div className="ml-auto inline-flex items-center rounded-full border border-hairline bg-surface-raised p-0.5">
+          <ViewToggleBtn
+            on={view === "table"}
+            onClick={() => changeView("table")}
+            icon={TableIcon}
+            label="Table view"
+          />
+          <ViewToggleBtn
+            on={view === "tree"}
+            onClick={() => changeView("tree")}
+            icon={Network}
+            label="Tree view"
+          />
+        </div>
       </div>
 
-      <DataTable
-        data={visible}
-        columns={columns}
-        getRowId={(a) => a.id}
-        onRowClick={(a) => openDetail(a.id)}
-        initialSorting={[{ id: "direct", desc: true }]}
-        emptyMessage="No members match your filters."
-      />
+      {view === "table" ? (
+        <DataTable
+          data={visible}
+          columns={columns}
+          getRowId={(a) => a.id}
+          onRowClick={(a) => openDetail(a.id)}
+          initialSorting={[{ id: "direct", desc: true }]}
+          emptyMessage="No members match your filters."
+        />
+      ) : (
+        <MembersTree
+          members={members.filter((m) => !deletedIds.has(m.id))}
+          onSelect={openDetail}
+          selectedId={selectedId}
+        />
+      )}
 
       <MemberDrawer
         open={selectedId !== null}
@@ -260,6 +309,31 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
       }`}
     >
       {children}
+    </button>
+  );
+}
+
+function ViewToggleBtn({
+  on, onClick, icon: Icon, label,
+}: {
+  on: boolean;
+  onClick: () => void;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={on}
+      aria-label={label}
+      title={label}
+      className={cn(
+        "grid size-7 place-items-center rounded-full transition-colors",
+        on ? "bg-ink text-surface" : "text-ink-muted hover:text-ink",
+      )}
+    >
+      <Icon className="size-3.5" />
     </button>
   );
 }
