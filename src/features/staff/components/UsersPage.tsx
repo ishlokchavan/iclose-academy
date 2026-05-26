@@ -1,18 +1,17 @@
 "use client";
 
-import { ChevronRight, Search, UserPlus } from "lucide-react";
+import { UserPlus } from "lucide-react";
+import { type ColumnDef } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/patterns/DataTable";
 import { RoleBadge } from "@/components/ui/role-badge";
 import { InviteUserModal } from "@/features/staff/components/InviteUserModal";
 import { UserDrawer } from "@/features/staff/components/UserDrawer";
 import type { StaffUserRow } from "@/features/staff/server/user-queries";
-import { compareBy, SortHeader, type SortState } from "@/components/patterns/SortHeader";
 import { formatDateTime } from "@/lib/utils/date";
 import type { Database } from "@/types/db";
-
-type UsersSortKey = "name" | "email" | "role" | "joined";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 type Tab = "learners" | "staff" | "admin";
@@ -45,10 +44,8 @@ export function UsersPage({
   selfId: string;
 }) {
   const [tab, setTab] = useState<Tab>("learners");
-  const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showInvite, setShowInvite] = useState(false);
-  const [sort, setSort] = useState<SortState<UsersSortKey>>({ key: "joined", dir: "desc" });
 
   const counts = useMemo(
     () => ({
@@ -59,40 +56,69 @@ export function UsersPage({
     [users],
   );
 
-  const visible = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const filtered = users.filter(tabFilter(tab)).filter((u) => {
-      if (!q) return true;
-      return (
-        u.full_name?.toLowerCase().includes(q) ||
-        u.email?.toLowerCase().includes(q)
-      );
-    });
-    const getters: Record<UsersSortKey, (u: StaffUserRow) => unknown> = {
-      name:   (u) => u.full_name ?? u.email ?? "",
-      email:  (u) => u.email ?? "",
-      role:   (u) => u.role,
-      joined: (u) => u.created_at,
-    };
-    return [...filtered].sort(compareBy(getters[sort.key], sort.dir));
-  }, [users, tab, search, sort]);
-
+  const visible = useMemo(() => users.filter(tabFilter(tab)), [users, tab]);
   const selectedUser = users.find((u) => u.id === selectedId) ?? null;
 
+  const columns = useMemo<ColumnDef<StaffUserRow, unknown>[]>(() => [
+    {
+      id: "user",
+      accessorFn: (u) => `${u.full_name ?? ""} ${u.email ?? ""}`.trim(),
+      header: "User",
+      enableGlobalFilter: true,
+      enableColumnFilter: true,
+      meta: { filter: "text", filterPlaceholder: "name or email" },
+      cell: ({ row }) => {
+        const u = row.original;
+        return (
+          <div className="flex items-center gap-3">
+            <div className="grid size-8 shrink-0 place-items-center rounded-full border border-hairline bg-surface-subtle text-[11px] font-semibold text-ink">
+              {initials(u)}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-[14px] font-medium text-ink">
+                {u.full_name ?? "(no name)"}
+                {u.id === selfId ? (
+                  <span className="ml-1.5 text-[11px] font-normal text-ink-muted">you</span>
+                ) : null}
+              </p>
+              <p className="truncate text-[12px] text-ink-muted">{u.email ?? "—"}</p>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      id: "role",
+      accessorFn: (u) => (tab === "learners" ? (u.plan_key ?? "") : u.role),
+      header: tab === "learners" ? "Plan" : "Role",
+      enableColumnFilter: true,
+      meta: { filter: "select", className: "hidden sm:table-cell" },
+      cell: ({ row }) => {
+        const u = row.original;
+        return tab === "learners" ? (
+          <span className="text-[13px] text-ink-muted capitalize">{u.plan_key ?? "—"}</span>
+        ) : (
+          <RoleBadge role={u.role as "learner" | "manager" | "admin"} />
+        );
+      },
+    },
+    {
+      id: "joined",
+      accessorKey: "created_at",
+      header: "Joined",
+      meta: { className: "hidden md:table-cell" },
+      cell: ({ row }) => (
+        <span className="text-[13px] text-ink-muted">
+          {formatDateTime(row.original.created_at)}
+        </span>
+      ),
+    },
+  ], [tab, selfId]);
+
   return (
-    <>
+    <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-xs">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-muted" aria-hidden />
-          <input
-            type="search"
-            placeholder="Search name or email…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-9 w-full rounded-full border border-hairline bg-surface-raised pl-9 pr-4 text-[14px] text-ink placeholder:text-ink-muted focus:border-accent focus:outline-none"
-          />
-        </div>
+      <div className="flex items-center justify-end">
         <Button
           onClick={() => setShowInvite(true)}
           className="shrink-0"
@@ -109,7 +135,7 @@ export function UsersPage({
           <button
             key={t}
             type="button"
-            onClick={() => { setTab(t); setSearch(""); }}
+            onClick={() => setTab(t)}
             aria-pressed={tab === t}
             className={[
               "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150",
@@ -131,96 +157,21 @@ export function UsersPage({
         ))}
       </div>
 
-      {/* Table */}
-      <div className="overflow-hidden rounded-2xl border border-hairline bg-surface-raised shadow-card">
-        {visible.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <p className="text-[15px] font-medium text-ink">
-              {search ? "No results" : tab === "learners" ? "No learners yet" : tab === "staff" ? "No staff members yet" : "No admins"}
-            </p>
-            <p className="mt-1 text-[13px] text-ink-muted">
-              {search ? "Try a different search." : tab === "staff" ? "Use Invite to add team members." : ""}
-            </p>
-          </div>
-        ) : (
-          <table className="w-full">
-            <thead className="border-b border-hairline bg-surface-subtle/50 text-left">
-              <tr>
-                <th className="px-5 py-3">
-                  <SortHeader<UsersSortKey> label="User" sortKey="name" current={sort} onChange={setSort} />
-                </th>
-                <th className="hidden px-5 py-3 sm:table-cell">
-                  <SortHeader<UsersSortKey>
-                    label={tab === "learners" ? "Plan" : "Role"}
-                    sortKey="role" current={sort} onChange={setSort}
-                  />
-                </th>
-                <th className="hidden px-5 py-3 md:table-cell">
-                  <SortHeader<UsersSortKey> label="Joined" sortKey="joined" current={sort} onChange={setSort} />
-                </th>
-                <th className="w-10 px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-hairline">
-              {visible.map((u) => (
-                <tr
-                  key={u.id}
-                  onClick={() => setSelectedId(u.id)}
-                  className="cursor-pointer transition-colors hover:bg-surface-subtle/50"
-                >
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <div className="grid size-8 shrink-0 place-items-center rounded-full border border-hairline bg-surface-subtle text-[11px] font-semibold text-ink">
-                        {initials(u)}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-[14px] font-medium text-ink">
-                          {u.full_name ?? "(no name)"}
-                          {u.id === selfId ? (
-                            <span className="ml-1.5 text-[11px] font-normal text-ink-muted">you</span>
-                          ) : null}
-                        </p>
-                        <p className="truncate text-[12px] text-ink-muted">{u.email ?? "—"}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="hidden px-5 py-3.5 sm:table-cell">
-                    {tab === "learners" ? (
-                      <span className="text-[13px] text-ink-muted capitalize">{u.plan_key ?? "—"}</span>
-                    ) : (
-                      <RoleBadge role={u.role as "learner" | "manager" | "admin"} />
-                    )}
-                  </td>
-                  <td className="hidden px-5 py-3.5 text-[13px] text-ink-muted md:table-cell">
-                    {formatDateTime(u.created_at)}
-                  </td>
-                  <td className="px-4 py-3.5 text-ink-muted">
-                    <ChevronRight className="size-4" aria-hidden />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <DataTable
+        data={visible}
+        columns={columns}
+        getRowId={(u) => u.id}
+        onRowClick={(u) => setSelectedId(u.id)}
+        initialSorting={[{ id: "joined", desc: true }]}
+        emptyMessage={tab === "staff" ? "No staff yet. Use Invite to add team members." : "No users match your filters."}
+      />
 
-      {/* Footer count */}
-      {visible.length > 0 && (
-        <p className="text-[12px] text-ink-muted">
-          {visible.length} {visible.length === 1 ? "user" : "users"}
-          {search ? ` matching "${search}"` : ""}
-        </p>
-      )}
-
-      {/* Drawer */}
       <UserDrawer
         user={selectedUser}
         selfId={selfId}
         onClose={() => setSelectedId(null)}
       />
-
-      {/* Invite modal */}
       <InviteUserModal open={showInvite} onClose={() => setShowInvite(false)} />
-    </>
+    </div>
   );
 }
