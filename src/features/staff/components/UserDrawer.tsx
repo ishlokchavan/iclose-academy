@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
+import { EmailLink, TelLink } from "@/components/patterns/ContactLink";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RoleBadge } from "@/components/ui/role-badge";
@@ -239,7 +240,9 @@ function DrawerBody({
               {user.full_name ?? "(no name)"}
               {isSelf && <span className="ml-1.5 text-[12px] font-normal text-ink-muted">you</span>}
             </p>
-            <p className="truncate text-[13px] text-ink-muted">{user.email ?? user.lead?.email ?? "—"}</p>
+            <p className="truncate text-[13px] text-ink-muted">
+              <EmailLink email={user.email ?? user.lead?.email ?? null} />
+            </p>
             <div className="mt-1.5">
               <RoleBadge role={user.role as "learner" | "manager" | "admin"} />
             </div>
@@ -339,8 +342,8 @@ function DrawerBody({
               <Section title="Contact">
                 <FieldRow label="First name" value={user.lead.first_name} />
                 <FieldRow label="Last name" value={user.lead.last_name} />
-                <FieldRow label="Email" value={user.lead.email} />
-                <FieldRow label="Phone" value={user.lead.phone} />
+                <FieldRow label="Email" value={<EmailLink email={user.lead.email} />} />
+                <FieldRow label="Phone" value={<TelLink phone={user.lead.phone} />} />
                 <FieldRow
                   label="Plan"
                   value={user.plan_key ? <span className="capitalize">{user.plan_key}</span> : null}
@@ -370,7 +373,7 @@ function DrawerBody({
 
             <Section title="Account">
               {/* Show email from profile only if no lead (lead already shows it above) */}
-              {!user.lead && <FieldRow label="Email" value={user.email} />}
+              {!user.lead && <FieldRow label="Email" value={<EmailLink email={user.email} />} />}
               <FieldRow label="Role" value={ROLE_LABEL[user.role]} />
               {!user.lead && user.plan_key && (
                 <FieldRow label="Plan" value={<span className="capitalize">{user.plan_key}</span>} />

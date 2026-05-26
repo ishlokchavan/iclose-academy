@@ -4,6 +4,7 @@ import { type ColumnDef } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 
 import { DataTable } from "@/components/patterns/DataTable";
+import { EmailLink, TelLink } from "@/components/patterns/ContactLink";
 import { HireDrawer } from "@/features/hires/components/HireDrawer";
 import { HIRE_STATUSES } from "@/features/hires/constants";
 import type { HireApplication } from "@/features/hires/server/queries";
@@ -99,8 +100,12 @@ export function HiresPage({ applications }: { applications: HireApplication[] })
         const a = row.original;
         return (
           <div>
-            <p className="text-[13px] text-ink-muted">{a.email}</p>
-            <p className="text-[12px] text-ink-muted/70">{a.phone}</p>
+            <p className="text-[13px] text-ink-muted">
+              <EmailLink email={a.email} stopPropagation />
+            </p>
+            <p className="text-[12px] text-ink-muted/70">
+              <TelLink phone={a.phone} stopPropagation />
+            </p>
           </div>
         );
       },

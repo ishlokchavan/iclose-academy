@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/patterns/DataTable";
+import { EmailLink, TelLink } from "@/components/patterns/ContactLink";
 import { AddEducatorModal } from "@/features/educators/components/AddEducatorModal";
 import { EducatorDrawer } from "@/features/educators/components/EducatorDrawer";
 import type { EducatorRecord } from "@/features/educators/server/queries";
@@ -51,7 +52,9 @@ export function EducatorsPage({ educators }: { educators: EducatorRecord[] }) {
       meta: { filter: "text", className: "hidden sm:table-cell" },
       cell: ({ row }) => (
         <span className="text-[13px] text-ink-muted">
-          {row.original.email ?? <span className="text-ink-muted/50">—</span>}
+          {row.original.email
+            ? <EmailLink email={row.original.email} stopPropagation />
+            : <span className="text-ink-muted/50">—</span>}
         </span>
       ),
     },
@@ -63,7 +66,9 @@ export function EducatorsPage({ educators }: { educators: EducatorRecord[] }) {
       meta: { filter: "text", className: "hidden md:table-cell" },
       cell: ({ row }) => (
         <span className="text-[13px] text-ink-muted">
-          {row.original.phone ?? <span className="text-ink-muted/50">—</span>}
+          {row.original.phone
+            ? <TelLink phone={row.original.phone} stopPropagation />
+            : <span className="text-ink-muted/50">—</span>}
         </span>
       ),
     },

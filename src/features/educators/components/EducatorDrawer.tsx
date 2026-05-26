@@ -11,6 +11,7 @@ import {
   deleteEducatorAction,
   updateEducatorAction,
 } from "@/features/educators/server/actions";
+import { EmailLink, TelLink } from "@/components/patterns/ContactLink";
 import type { EducatorRecord } from "@/features/educators/server/queries";
 import { formatDateTime as formatDate } from "@/lib/utils/date";
 
@@ -152,7 +153,9 @@ function DrawerBody({
           )}
           <div className="min-w-0">
             <p className="truncate text-[17px] font-semibold text-ink leading-snug">{educator.name}</p>
-            <p className="truncate text-[13px] text-ink-muted">{educator.email ?? "—"}</p>
+            <p className="truncate text-[13px] text-ink-muted">
+              <EmailLink email={educator.email} />
+            </p>
             {educator.expertise && (
               <p className="mt-1 text-[11px] font-mono uppercase tracking-widest text-ink-muted">{educator.expertise}</p>
             )}
@@ -233,8 +236,8 @@ function DrawerBody({
           /* ── View mode ── */
           <>
             <Section title="Contact">
-              <FieldRow label="Email"     value={educator.email} />
-              <FieldRow label="Phone"     value={educator.phone} />
+              <FieldRow label="Email"     value={<EmailLink email={educator.email} />} />
+              <FieldRow label="Phone"     value={<TelLink phone={educator.phone} />} />
             </Section>
             <Section title="Profile">
               <FieldRow label="Expertise" value={educator.expertise} />

@@ -3,12 +3,13 @@
 import { Check, ChevronRight, Copy, CornerDownRight, ExternalLink, Link2, Trash2 } from "lucide-react";
 import { useState, useTransition } from "react";
 
+import { EmailLink, TelLink } from "@/components/patterns/ContactLink";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
 import { referralLink } from "../constants";
 import { deleteMemberAction } from "../server/actions";
 import type { MemberDetail, TreeNode } from "../server/queries";
-import { formatDate as fmtDate, formatDateTime as fmtDateTime } from "@/lib/utils/date";
+import { formatDateTime as fmtDateTime } from "@/lib/utils/date";
 
 export function MemberDrawer({
   open, loading, detail, onClose, onDeleted,
@@ -79,52 +80,18 @@ function Body({
             </span>
           ) : null}
         </div>
-        <p className="text-[13px] text-ink-muted">{lead.email}</p>
+        <p className="text-[13px] text-ink-muted">
+          <EmailLink email={lead.email} />
+        </p>
         {lead.phone ? (
-          <p className="mt-0.5 text-[13px] text-ink-muted">{lead.phone}</p>
+          <p className="mt-0.5 text-[13px] text-ink-muted">
+            <TelLink phone={lead.phone} />
+          </p>
         ) : null}
         <p className="mt-3 text-[12px] text-ink-muted">
           Joined {fmtDateTime(lead.created_at)}
           {lead.source ? ` · via ${lead.source}` : null}
         </p>
-      </div>
-
-      {/* Registration details — everything captured at signup */}
-      <div className="border-b border-hairline px-6 py-5">
-        <p className="eyebrow mb-3">Registration</p>
-        <dl className="grid grid-cols-[110px_1fr] gap-x-4 gap-y-2 text-[12px]">
-          <DetailRow label="First name"  value={lead.first_name} />
-          <DetailRow label="Last name"   value={lead.last_name} />
-          <DetailRow label="Email"       value={lead.email} mono />
-          <DetailRow label="Phone"       value={lead.phone ?? "—"} mono />
-          <DetailRow label="Plan"        value={lead.plan_key} capitalize />
-          <DetailRow label="Intent"      value={lead.intent ?? "—"} capitalize />
-          <DetailRow
-            label="Focus"
-            value={lead.focus && lead.focus.length > 0 ? lead.focus.join(", ") : "—"}
-            capitalize
-          />
-          <DetailRow label="Source"      value={lead.source ?? "—"} />
-          <DetailRow
-            label="Marketing"
-            value={lead.consent_marketing
-              ? `Opted in${lead.consented_at ? ` · ${fmtDateTime(lead.consented_at)}` : ""}`
-              : "Not opted in"}
-          />
-          <DetailRow
-            label="Verified"
-            value={lead.is_verified
-              ? `Yes${lead.verified_at ? ` · ${fmtDateTime(lead.verified_at)}` : ""}`
-              : "No"}
-          />
-          {lead.referer ? (
-            <DetailRow label="Referer"   value={lead.referer} mono breakAll />
-          ) : null}
-          {lead.user_agent ? (
-            <DetailRow label="User agent" value={lead.user_agent} mono breakAll />
-          ) : null}
-          <DetailRow label="Lead ID"     value={lead.id} mono breakAll />
-        </dl>
       </div>
 
       {/* Stats */}
@@ -365,34 +332,6 @@ function TreeRow({ node, indent }: { node: TreeNode; indent: number }) {
         </ul>
       ) : null}
     </li>
-  );
-}
-
-function DetailRow({
-  label, value, mono, capitalize, breakAll,
-}: {
-  label: string;
-  value: string | null | undefined;
-  mono?: boolean;
-  capitalize?: boolean;
-  breakAll?: boolean;
-}) {
-  const display = value && value.length > 0 ? value : "—";
-  const muted = display === "—";
-  return (
-    <>
-      <dt className="text-ink-muted">{label}</dt>
-      <dd
-        className={[
-          muted ? "text-ink-muted/60" : "text-ink",
-          mono ? "font-mono text-[11px]" : "",
-          capitalize ? "capitalize" : "",
-          breakAll ? "break-all" : "",
-        ].join(" ")}
-      >
-        {display}
-      </dd>
-    </>
   );
 }
 

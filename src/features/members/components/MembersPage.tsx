@@ -5,6 +5,7 @@ import { type ColumnDef } from "@tanstack/react-table";
 import { useEffect, useMemo, useState } from "react";
 
 import { DataTable } from "@/components/patterns/DataTable";
+import { EmailLink } from "@/components/patterns/ContactLink";
 import { cn } from "@/lib/utils/cn";
 import { formatDateTime } from "@/lib/utils/date";
 
@@ -95,7 +96,9 @@ export function MembersPage({
               <span className="block text-[14px] font-medium text-ink leading-snug truncate">
                 {a.name || a.email}
               </span>
-              <span className="block text-[12px] text-ink-muted truncate">{a.email}</span>
+              <span className="block text-[12px] text-ink-muted truncate">
+                <EmailLink email={a.email} stopPropagation />
+              </span>
             </div>
           </div>
         );

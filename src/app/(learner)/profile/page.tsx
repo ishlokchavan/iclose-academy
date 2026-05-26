@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { LogOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { EmailLink } from "@/components/patterns/ContactLink";
 import { PageHeader } from "@/components/patterns/PageHeader";
 import { ReferralCard } from "@/features/members/components/ReferralCard";
 import { getMemberByEmail } from "@/features/members/server/queries";
@@ -64,7 +65,9 @@ export default async function ProfilePage() {
           </div>
           <div className="space-y-1">
             <p className="text-base font-semibold text-ink">{displayName || "—"}</p>
-            <p className="text-sm text-ink-muted">{user.email}</p>
+            <p className="text-sm text-ink-muted">
+              <EmailLink email={user.email} />
+            </p>
             <p className="flex items-center gap-1 text-[11px] font-mono uppercase tracking-widest text-ink-muted">
               <RoleIcon className="size-3" /> {roleLabel}
             </p>

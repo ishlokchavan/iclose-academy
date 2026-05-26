@@ -215,7 +215,9 @@ function DrawerBody({
             <p className="text-[17px] font-semibold text-ink leading-snug">
               {app.first_name} {app.last_name}
             </p>
-            <p className="text-[13px] text-ink-muted">{app.email}</p>
+            <p className="text-[13px] text-ink-muted">
+              <a href={`mailto:${app.email}`} className="hover:text-accent hover:underline">{app.email}</a>
+            </p>
             <div className="mt-2">
               <StatusBadge status={status} />
             </div>
