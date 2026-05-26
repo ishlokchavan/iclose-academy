@@ -458,7 +458,9 @@ export type Database = {
           created_at: string
           email: string
           first_name: string | null
+          focus: string[] | null
           id: string
+          intent: string | null
           is_verified: boolean
           last_name: string | null
           name: string
@@ -480,7 +482,9 @@ export type Database = {
           created_at?: string
           email: string
           first_name?: string | null
+          focus?: string[] | null
           id?: string
+          intent?: string | null
           is_verified?: boolean
           last_name?: string | null
           name: string
@@ -502,7 +506,9 @@ export type Database = {
           created_at?: string
           email?: string
           first_name?: string | null
+          focus?: string[] | null
           id?: string
+          intent?: string | null
           is_verified?: boolean
           last_name?: string | null
           name?: string

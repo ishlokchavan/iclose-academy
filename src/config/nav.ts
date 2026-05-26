@@ -99,7 +99,7 @@ export const MANAGER_NAV: NavSection[] = [
   {
     label: "Growth",
     items: [
-      { label: "Affiliates", href: "/manage/affiliates", icon: "share" },
+      { label: "Members", href: "/manage/members", icon: "share" },
     ],
   },
   {

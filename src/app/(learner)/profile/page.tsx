@@ -3,8 +3,8 @@ import { LogOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/patterns/PageHeader";
-import { ReferralCard } from "@/features/affiliates/components/ReferralCard";
-import { getAffiliateByEmail } from "@/features/affiliates/server/queries";
+import { ReferralCard } from "@/features/members/components/ReferralCard";
+import { getMemberByEmail } from "@/features/members/server/queries";
 import { signOutAction } from "@/features/auth/server/actions";
 import { requireUser } from "@/lib/auth/guards";
 import { ROLE_LABEL } from "@/config/nav";
@@ -19,7 +19,7 @@ export default async function ProfilePage() {
   const roleLabel = ROLE_LABEL[user.role].label;
 
   const lead = user.email ? await getOwnLeadData(user.email) : null;
-  const affiliate = user.email ? await getAffiliateByEmail(user.email) : null;
+  const affiliate = user.email ? await getMemberByEmail(user.email) : null;
   // Referral links point at the marketing site (where the lead form lives),
   // not the academy app origin. Falls back to NEXT_PUBLIC_SITE_URL so envs
   // that haven't split the two domains keep working.

@@ -6,16 +6,16 @@ import { useState, useTransition } from "react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
 import { referralLink } from "../constants";
-import { deleteAffiliateAction } from "../server/actions";
-import type { AffiliateDetail, TreeNode } from "../server/queries";
+import { deleteMemberAction } from "../server/actions";
+import type { MemberDetail, TreeNode } from "../server/queries";
 import { formatDate as fmtDate, formatDateTime as fmtDateTime } from "@/lib/utils/date";
 
-export function AffiliateDrawer({
+export function MemberDrawer({
   open, loading, detail, onClose, onDeleted,
 }: {
   open: boolean;
   loading: boolean;
-  detail: AffiliateDetail | null;
+  detail: MemberDetail | null;
   onClose: () => void;
   onDeleted: (leadId: string) => void;
 }) {
@@ -32,7 +32,7 @@ function Body({
   loading, detail, onDeleted,
 }: {
   loading: boolean;
-  detail: AffiliateDetail | null;
+  detail: MemberDetail | null;
   onDeleted: (leadId: string) => void;
 }) {
   if (loading || !detail) {
@@ -197,7 +197,7 @@ function DangerZone({
   function handleDelete() {
     setError(null);
     startTransition(async () => {
-      const res = await deleteAffiliateAction(leadId);
+      const res = await deleteMemberAction(leadId);
       if (!res.ok) {
         setError(res.error);
         return;

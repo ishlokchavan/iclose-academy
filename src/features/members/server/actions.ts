@@ -6,19 +6,19 @@ import { logAudit } from "@/features/audit/server/log";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireMinRole } from "@/lib/auth/guards";
 
-import { getAffiliateById } from "./queries";
-import type { AffiliateDetail } from "./queries";
+import { getMemberById } from "./queries";
+import type { MemberDetail } from "./queries";
 
-export async function loadAffiliateDetailAction(leadId: string): Promise<AffiliateDetail | null> {
+export async function loadMemberDetailAction(leadId: string): Promise<MemberDetail | null> {
   await requireMinRole("manager");
-  return getAffiliateById(leadId);
+  return getMemberById(leadId);
 }
 
 export type DeleteResult = { ok: true } | { ok: false; error: string };
 
-export async function deleteAffiliateAction(leadId: string): Promise<DeleteResult> {
+export async function deleteMemberAction(leadId: string): Promise<DeleteResult> {
   const user = await requireMinRole("manager");
-  if (!leadId) return { ok: false, error: "Missing affiliate id." };
+  if (!leadId) return { ok: false, error: "Missing member id." };
 
   const admin = createSupabaseAdminClient();
   const { data: snapshot } = await admin
@@ -31,13 +31,13 @@ export async function deleteAffiliateAction(leadId: string): Promise<DeleteResul
   if (error) return { ok: false, error: error.message };
 
   await logAudit({
-    action: "affiliate.delete",
+    action: "member.delete",
     entity_type: "lead",
     entity_id: leadId,
     diff: { deleted: snapshot ?? null },
     actor: { id: user.id, email: user.email, role: user.role },
   });
 
-  revalidatePath("/manage/affiliates");
+  revalidatePath("/manage/members");
   return { ok: true };
 }

@@ -7,8 +7,8 @@ import { useEffect, useMemo, useState } from "react";
 import { DataTable } from "@/components/patterns/DataTable";
 import { formatDateTime } from "@/lib/utils/date";
 
-import { AffiliateDrawer } from "./AffiliateDrawer";
-import type { AffiliateDetail, AffiliateOverview, AffiliateRow } from "../server/queries";
+import { MemberDrawer } from "./MemberDrawer";
+import type { MemberDetail, MembersOverview, MemberRow } from "../server/queries";
 
 function initials(name: string | null, email: string) {
   const src = (name ?? email).trim();
@@ -22,17 +22,17 @@ function initials(name: string | null, email: string) {
     .toUpperCase();
 }
 
-export function AffiliatesPage({
+export function MembersPage({
   overview,
-  affiliates,
+  members,
   loadDetail,
 }: {
-  overview: AffiliateOverview;
-  affiliates: AffiliateRow[];
-  loadDetail: (id: string) => Promise<AffiliateDetail | null>;
+  overview: MembersOverview;
+  members: MemberRow[];
+  loadDetail: (id: string) => Promise<MemberDetail | null>;
 }) {
   const [selectedId, setId]   = useState<string | null>(null);
-  const [detail, setDetail]   = useState<AffiliateDetail | null>(null);
+  const [detail, setDetail]   = useState<MemberDetail | null>(null);
   const [detailLoading, setDL] = useState(false);
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [filter, setFilter]   = useState<"all" | "active" | "referred">("all");
@@ -41,27 +41,27 @@ export function AffiliatesPage({
   useEffect(() => {
     setDeletedIds((prev) => {
       if (prev.size === 0) return prev;
-      const present = new Set(affiliates.map((a) => a.id));
+      const present = new Set(members.map((a) => a.id));
       const next = new Set<string>();
       for (const id of prev) if (present.has(id)) next.add(id);
       return next.size === prev.size ? prev : next;
     });
-  }, [affiliates]);
+  }, [members]);
 
   const visible = useMemo(() => {
-    return affiliates.filter((a) => {
+    return members.filter((a) => {
       if (deletedIds.has(a.id)) return false;
       if (filter === "active"   && a.referral_count === 0) return false;
       if (filter === "referred" && !a.referred_by_code)    return false;
       return true;
     });
-  }, [affiliates, filter, deletedIds]);
+  }, [members, filter, deletedIds]);
 
-  const columns = useMemo<ColumnDef<AffiliateRow, unknown>[]>(() => [
+  const columns = useMemo<ColumnDef<MemberRow, unknown>[]>(() => [
     {
-      id: "affiliate",
+      id: "member",
       accessorFn: (a) => `${a.name ?? ""} ${a.email}`.trim(),
-      header: "Affiliate",
+      header: "Member",
       enableGlobalFilter: true,
       enableColumnFilter: true,
       meta: { filter: "text", filterPlaceholder: "name or email" },
@@ -83,12 +83,32 @@ export function AffiliatesPage({
       },
     },
     {
+      id: "intent",
+      accessorFn: (m) => m.intent ?? "",
+      header: "Type",
+      enableColumnFilter: true,
+      meta: { filter: "select", className: "hidden sm:table-cell" },
+      cell: ({ row }) => {
+        const v = row.original.intent;
+        if (!v) return <span className="text-[12px] text-ink-muted/50">—</span>;
+        const tone =
+          v === "closer" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+          v === "buyer"  ? "bg-blue-50 text-blue-700 border-blue-200" :
+                           "bg-surface-subtle text-ink-muted border-hairline";
+        return (
+          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium capitalize ${tone}`}>
+            {v}
+          </span>
+        );
+      },
+    },
+    {
       id: "code",
       accessorKey: "referral_code",
       header: "Code",
       enableGlobalFilter: true,
       enableColumnFilter: true,
-      meta: { filter: "text", className: "hidden sm:table-cell", filterPlaceholder: "ABC123" },
+      meta: { filter: "text", className: "hidden md:table-cell", filterPlaceholder: "ABC123" },
       cell: ({ row }) => (
         <code className="rounded-md border border-hairline bg-surface-subtle px-2 py-0.5 text-[12px] font-mono font-medium text-ink">
           {row.original.referral_code ?? "—"}
@@ -183,10 +203,10 @@ export function AffiliatesPage({
         getRowId={(a) => a.id}
         onRowClick={(a) => openDetail(a.id)}
         initialSorting={[{ id: "direct", desc: true }]}
-        emptyMessage="No affiliates match your filters."
+        emptyMessage="No members match your filters."
       />
 
-      <AffiliateDrawer
+      <MemberDrawer
         open={selectedId !== null}
         loading={detailLoading}
         detail={detail}

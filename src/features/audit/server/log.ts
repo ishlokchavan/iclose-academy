@@ -19,8 +19,8 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
  * swallows its own errors and logs to the server console instead.
  */
 export type AuditAction =
-  // affiliate / leads
-  | "affiliate.delete"
+  // members / leads
+  | "member.delete"
   | "lead.create_via_api"
   | "lead.update"
   // profile / users

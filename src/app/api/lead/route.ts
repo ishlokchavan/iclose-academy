@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
-import { normalizeCode } from "@/features/affiliates/constants";
+import { normalizeCode } from "@/features/members/constants";
 import { logAudit } from "@/features/audit/server/log";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -21,7 +21,16 @@ const payloadSchema = z.object({
   email:            z.string().trim().toLowerCase().email().max(254),
   phone:            z.string().trim().min(3).max(40),
   jobTitle:         z.string().trim().max(100).optional().nullable(),
-  focus:            z.string().trim().max(100).optional().nullable(),
+  // High-level user type. Free text today; iclose.ae form should send
+  // 'closer' | 'buyer' | 'other'. Stored on leads.intent for filtering /
+  // reporting in /manage/members.
+  intent:           z.string().trim().toLowerCase().max(40).optional().nullable(),
+  // Property focus(es). Accepts either a single string or an array — the
+  // marketing form has historically sent both shapes.
+  focus:            z.union([
+                      z.string().trim().max(100),
+                      z.array(z.string().trim().max(100)).max(20),
+                    ]).optional().nullable(),
   dealTypes:        z.array(z.string()).optional().default([]),
   message:          z.string().trim().max(2000).optional().nullable(),
   consentPrivacy:   z.boolean().optional().default(false),
@@ -100,6 +109,18 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Normalise focus to a string[] for the leads.focus column (text array).
+  const focusArr: string[] | null =
+    d.focus == null
+      ? null
+      : Array.isArray(d.focus)
+        ? d.focus.filter(Boolean)
+        : d.focus.trim() === ""
+          ? null
+          : [d.focus.trim()];
+
+  const intent = d.intent && d.intent.length > 0 ? d.intent : null;
+
   const { data: inserted, error } = await admin
     .from("leads")
     .insert({
@@ -114,6 +135,8 @@ export async function POST(req: NextRequest) {
       referred_by_code:  referredByCode,
       user_agent:        userAgent,
       referer:           referer,
+      intent,
+      focus:             focusArr,
     })
     .select("referral_code")
     .single();

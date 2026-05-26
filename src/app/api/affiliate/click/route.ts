@@ -1,13 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { recordReferralClick } from "@/features/affiliates/server/track";
+import { recordReferralClick } from "@/features/members/server/track";
 import {
   REF_COOKIE,
   REF_COOKIE_MAX_AGE,
   VISITOR_COOKIE,
   VISITOR_COOKIE_MAX_AGE,
   normalizeCode,
-} from "@/features/affiliates/constants";
+} from "@/features/members/constants";
 
 export const runtime = "nodejs";
 

@@ -7,7 +7,7 @@ import {
   VISITOR_COOKIE,
   VISITOR_COOKIE_MAX_AGE,
   normalizeCode,
-} from "@/features/affiliates/constants";
+} from "@/features/members/constants";
 import { updateSupabaseSession } from "@/lib/supabase/middleware";
 
 const AUTH_ROUTES = ["/sign-in", "/sign-up", "/verify"];

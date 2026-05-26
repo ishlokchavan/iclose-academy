@@ -2,11 +2,12 @@ import "server-only";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
-export type AffiliateRow = {
+export type MemberRow = {
   id: string;
   name: string | null;
   email: string;
   phone: string | null;
+  intent: string | null;        // 'closer' | 'buyer' | 'other' | null (free text)
   referral_code: string | null;
   referral_count: number;       // direct referrals
   network_size: number;         // total downstream (all tiers)
@@ -37,8 +38,8 @@ export type AncestorNode = {
   depth: number; // 2 = direct referrer, 3 = referrer's referrer, ...
 };
 
-export type AffiliateDetail = {
-  lead: AffiliateRow;
+export type MemberDetail = {
+  lead: MemberRow;
   /** Flat count of direct downstream referrals (depth = 1). */
   directReferralCount: number;
   /** Total nodes in the entire downstream tree. */
@@ -59,14 +60,14 @@ export type AffiliateDetail = {
   }>;
 };
 
-export type AffiliateOverview = {
+export type MembersOverview = {
   totalAffiliates: number;
   totalClicks: number;
   totalReferrals: number;
   activeAffiliates: number; // affiliates with ≥1 referral
 };
 
-export async function getAffiliateOverview(): Promise<AffiliateOverview> {
+export async function getMembersOverview(): Promise<MembersOverview> {
   const admin = createSupabaseAdminClient();
 
   const [{ count: leadsCount }, { count: clicksCount }, { count: referralsCount }, { count: activeCount }] =
@@ -91,13 +92,13 @@ export async function getAffiliateOverview(): Promise<AffiliateOverview> {
   };
 }
 
-export async function getAllAffiliates(): Promise<AffiliateRow[]> {
+export async function getAllMembers(): Promise<MemberRow[]> {
   const admin = createSupabaseAdminClient();
 
   const { data: leads, error } = await admin
     .from("leads")
     .select(
-      "id, name, email, phone, referral_code, referral_count, created_at, source, referred_by_code, referred_by_lead_id",
+      "id, name, email, phone, intent, referral_code, referral_count, created_at, source, referred_by_code, referred_by_lead_id",
     )
     .order("referral_count", { ascending: false })
     .order("created_at", { ascending: false });
@@ -177,13 +178,13 @@ export async function getAllAffiliates(): Promise<AffiliateRow[]> {
   });
 }
 
-export async function getAffiliateById(leadId: string): Promise<AffiliateDetail | null> {
+export async function getMemberById(leadId: string): Promise<MemberDetail | null> {
   const admin = createSupabaseAdminClient();
 
   const { data: lead, error } = await admin
     .from("leads")
     .select(
-      "id, name, email, phone, referral_code, referral_count, created_at, source, referred_by_code, referred_by_lead_id",
+      "id, name, email, phone, intent, referral_code, referral_count, created_at, source, referred_by_code, referred_by_lead_id",
     )
     .eq("id", leadId)
     .maybeSingle();
@@ -204,7 +205,7 @@ export async function getAffiliateById(leadId: string): Promise<AffiliateDetail 
           .eq("code", lead.referral_code)
           .order("created_at", { ascending: false })
           .limit(100)
-      : Promise.resolve({ data: [] as AffiliateDetail["clicks"] }),
+      : Promise.resolve({ data: [] as MemberDetail["clicks"] }),
   ]);
 
   const clickRows = clicksRes.data ?? [];
@@ -281,7 +282,7 @@ export async function getAffiliateById(leadId: string): Promise<AffiliateDetail 
 }
 
 /** Fetch the current user's affiliate context by email. */
-export async function getAffiliateByEmail(email: string): Promise<{
+export async function getMemberByEmail(email: string): Promise<{
   code: string;
   referralCount: number;
   networkSize: number;
