@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 
 import { DataTable } from "@/components/patterns/DataTable";
 import { EmailLink, TelLink } from "@/components/patterns/ContactLink";
+import { filterByPeriod, PeriodFilter, type Period } from "@/components/patterns/PeriodFilter";
 import { HireDrawer } from "@/features/hires/components/HireDrawer";
 import { HIRE_STATUSES } from "@/features/hires/constants";
 import type { HireApplication } from "@/features/hires/server/queries";
@@ -26,38 +27,18 @@ const STATUS_PILL: Record<string, string> = {
   rejected:    "bg-red-50 text-red-600 border-red-200",
 };
 
-const DATE_RANGES = [
-  { label: "All time",     value: "all" },
-  { label: "Today",        value: "today" },
-  { label: "Last 7 days",  value: "7d" },
-  { label: "Last 30 days", value: "30d" },
-] as const;
-
-type DateRange = (typeof DATE_RANGES)[number]["value"];
-
-function dateRangeStart(range: DateRange): Date | null {
-  const now = new Date();
-  if (range === "today") return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  if (range === "7d")  { const d = new Date(now); d.setDate(d.getDate() - 7);  return d; }
-  if (range === "30d") { const d = new Date(now); d.setDate(d.getDate() - 30); return d; }
-  return null;
-}
+// Period filter helpers come from the shared component.
 
 export function HiresPage({ applications }: { applications: HireApplication[] }) {
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [dateRange, setDateRange]       = useState<DateRange>("all");
+  const [period, setPeriod]             = useState<Period>("all");
   const [selected, setSelected]         = useState<HireApplication | null>(null);
 
-  // Cross-cutting predicates that don't map to a single column: status chip
-  // and date-range select. These belong outside the column-filter UI.
   const visible = useMemo(() => {
-    const rangeStart = dateRangeStart(dateRange);
-    return applications.filter((a) => {
-      if (statusFilter !== "all" && a.status !== statusFilter) return false;
-      if (rangeStart && new Date(a.created_at) < rangeStart)   return false;
-      return true;
-    });
-  }, [applications, statusFilter, dateRange]);
+    const inPeriod = filterByPeriod(applications, (a) => a.created_at, period);
+    if (statusFilter === "all") return inPeriod;
+    return inPeriod.filter((a) => a.status === statusFilter);
+  }, [applications, statusFilter, period]);
 
   const columns = useMemo<ColumnDef<HireApplication, unknown>[]>(() => [
     {
@@ -160,17 +141,7 @@ export function HiresPage({ applications }: { applications: HireApplication[] })
             {s}
           </button>
         ))}
-        <div className="ml-auto">
-          <select
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value as DateRange)}
-            className="h-7 rounded-full border border-hairline bg-surface-raised px-3 text-[12px] text-ink focus:outline-none focus:border-accent"
-          >
-            {DATE_RANGES.map((r) => (
-              <option key={r.value} value={r.value}>{r.label}</option>
-            ))}
-          </select>
-        </div>
+        <PeriodFilter value={period} onChange={setPeriod} className="ml-auto" />
       </div>
 
       <DataTable

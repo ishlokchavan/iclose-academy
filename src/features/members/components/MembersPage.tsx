@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { DataTable } from "@/components/patterns/DataTable";
 import { EmailLink } from "@/components/patterns/ContactLink";
+import { filterByPeriod, PeriodFilter, type Period } from "@/components/patterns/PeriodFilter";
 import { cn } from "@/lib/utils/cn";
 import { formatDateTime } from "@/lib/utils/date";
 
@@ -42,6 +43,7 @@ export function MembersPage({
   const [detailLoading, setDL] = useState(false);
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [filter, setFilter]   = useState<"all" | "active" | "referred">("all");
+  const [period, setPeriod]   = useState<Period>("all");
   const [view, setView]       = useState<ViewMode>("table");
 
   // Restore the view preference on first mount only (avoids SSR mismatch).
@@ -69,13 +71,14 @@ export function MembersPage({
   }, [members]);
 
   const visible = useMemo(() => {
-    return members.filter((a) => {
+    const inPeriod = filterByPeriod(members, (m) => m.created_at, period);
+    return inPeriod.filter((a) => {
       if (deletedIds.has(a.id)) return false;
       if (filter === "active"   && a.referral_count === 0) return false;
       if (filter === "referred" && !a.referred_by_code)    return false;
       return true;
     });
-  }, [members, filter, deletedIds]);
+  }, [members, filter, period, deletedIds]);
 
   const columns = useMemo<ColumnDef<MemberRow, unknown>[]>(() => [
     {
@@ -225,7 +228,10 @@ export function MembersPage({
             {members.length} member{members.length === 1 ? "" : "s"} · click any node to open details
           </p>
         )}
-        <div className="ml-auto inline-flex items-center rounded-full border border-hairline bg-surface-raised p-0.5">
+        {view === "table" ? (
+          <PeriodFilter value={period} onChange={setPeriod} className="ml-auto" />
+        ) : null}
+        <div className={cn("inline-flex items-center rounded-full border border-hairline bg-surface-raised p-0.5", view !== "table" && "ml-auto")}>
           <ViewToggleBtn
             on={view === "table"}
             onClick={() => changeView("table")}

@@ -5,6 +5,7 @@ import { Database, Server, User, Wand2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { DataTable } from "@/components/patterns/DataTable";
+import { filterByPeriod, PeriodFilter, type Period } from "@/components/patterns/PeriodFilter";
 import { formatDateTimeSeconds } from "@/lib/utils/date";
 
 import type { AuditFacets, AuditLogRow } from "../server/queries";
@@ -24,6 +25,12 @@ export function AuditLogPage({
   facets: AuditFacets; // kept for prop compat — DataTable derives facets live
 }) {
   const [selected, setSelected] = useState<AuditLogRow | null>(null);
+  const [period, setPeriod]     = useState<Period>("all");
+
+  const visible = useMemo(
+    () => filterByPeriod(rows, (r) => r.created_at, period),
+    [rows, period],
+  );
 
   const columns = useMemo<ColumnDef<AuditLogRow, unknown>[]>(() => [
     {
@@ -107,18 +114,21 @@ export function AuditLogPage({
   ], []);
 
   return (
-    <>
+    <div className="space-y-3">
+      <div className="flex items-center">
+        <PeriodFilter value={period} onChange={setPeriod} className="ml-auto" />
+      </div>
       <DataTable
-        data={rows}
+        data={visible}
         columns={columns}
         getRowId={(r) => r.id}
         onRowClick={(r) => setSelected(r)}
         initialSorting={[{ id: "when", desc: true }]}
-        emptyMessage="No audit events yet."
+        emptyMessage="No audit events match your filters."
         pageSize={50}
       />
 
       <AuditDetailDrawer row={selected} onClose={() => setSelected(null)} />
-    </>
+    </div>
   );
 }

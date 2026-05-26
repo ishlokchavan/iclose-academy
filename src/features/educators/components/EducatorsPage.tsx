@@ -7,6 +7,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/patterns/DataTable";
 import { EmailLink, TelLink } from "@/components/patterns/ContactLink";
+import { filterByPeriod, PeriodFilter, type Period } from "@/components/patterns/PeriodFilter";
 import { AddEducatorModal } from "@/features/educators/components/AddEducatorModal";
 import { EducatorDrawer } from "@/features/educators/components/EducatorDrawer";
 import type { EducatorRecord } from "@/features/educators/server/queries";
@@ -25,6 +26,12 @@ function initials(e: EducatorRecord) {
 export function EducatorsPage({ educators }: { educators: EducatorRecord[] }) {
   const [selected, setSelected] = useState<EducatorRecord | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [period, setPeriod] = useState<Period>("all");
+
+  const visible = useMemo(
+    () => filterByPeriod(educators, (e) => e.created_at, period),
+    [educators, period],
+  );
 
   const columns = useMemo<ColumnDef<EducatorRecord, unknown>[]>(() => [
     {
@@ -99,15 +106,18 @@ export function EducatorsPage({ educators }: { educators: EducatorRecord[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-end">
-        <Button onClick={() => setAddOpen(true)}>
-          <UserPlus className="size-4" />
-          <span className="hidden sm:inline">Add educator</span>
-        </Button>
+      <div className="flex items-center gap-2">
+        <PeriodFilter value={period} onChange={setPeriod} />
+        <div className="ml-auto">
+          <Button onClick={() => setAddOpen(true)}>
+            <UserPlus className="size-4" />
+            <span className="hidden sm:inline">Add educator</span>
+          </Button>
+        </div>
       </div>
 
       <DataTable
-        data={educators}
+        data={visible}
         columns={columns}
         getRowId={(e) => e.id}
         onRowClick={(e) => setSelected(e)}

@@ -3,15 +3,22 @@
 import { type ColumnDef } from "@tanstack/react-table";
 import { Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { DataTable } from "@/components/patterns/DataTable";
+import { filterByPeriod, PeriodFilter, type Period } from "@/components/patterns/PeriodFilter";
 import { InquiryStatusBadge } from "@/features/inquiries/components/InquiryStatusBadge";
 import { InquiryStatusSelect } from "@/features/inquiries/components/InquiryStatusSelect";
 import type { InquiryRow } from "@/features/inquiries/server/queries";
 import { formatDateTime } from "@/lib/utils/date";
 
 export function InquiriesTable({ inquiries }: { inquiries: InquiryRow[] }) {
+  const [period, setPeriod] = useState<Period>("all");
+  const visible = useMemo(
+    () => filterByPeriod(inquiries, (i) => i.created_at, period),
+    [inquiries, period],
+  );
+
   const columns = useMemo<ColumnDef<InquiryRow, unknown>[]>(() => [
     {
       id: "status",
@@ -115,12 +122,17 @@ export function InquiriesTable({ inquiries }: { inquiries: InquiryRow[] }) {
   ], []);
 
   return (
-    <DataTable
-      data={inquiries}
-      columns={columns}
-      getRowId={(i) => i.id}
-      initialSorting={[{ id: "created", desc: true }]}
-      emptyMessage="No inquiries match your filters."
-    />
+    <div className="space-y-3">
+      <div className="flex items-center">
+        <PeriodFilter value={period} onChange={setPeriod} className="ml-auto" />
+      </div>
+      <DataTable
+        data={visible}
+        columns={columns}
+        getRowId={(i) => i.id}
+        initialSorting={[{ id: "created", desc: true }]}
+        emptyMessage="No inquiries match your filters."
+      />
+    </div>
   );
 }

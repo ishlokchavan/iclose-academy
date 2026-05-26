@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/patterns/DataTable";
+import { filterByPeriod, PeriodFilter, type Period } from "@/components/patterns/PeriodFilter";
 import { RoleBadge } from "@/components/ui/role-badge";
 import { InviteUserModal } from "@/features/staff/components/InviteUserModal";
 import { UserDrawer } from "@/features/staff/components/UserDrawer";
@@ -46,6 +47,7 @@ export function UsersPage({
   const [tab, setTab] = useState<Tab>("learners");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showInvite, setShowInvite] = useState(false);
+  const [period, setPeriod] = useState<Period>("all");
 
   const counts = useMemo(
     () => ({
@@ -56,7 +58,10 @@ export function UsersPage({
     [users],
   );
 
-  const visible = useMemo(() => users.filter(tabFilter(tab)), [users, tab]);
+  const visible = useMemo(
+    () => filterByPeriod(users.filter(tabFilter(tab)), (u) => u.created_at, period),
+    [users, tab, period],
+  );
   const selectedUser = users.find((u) => u.id === selectedId) ?? null;
 
   const columns = useMemo<ColumnDef<StaffUserRow, unknown>[]>(() => [
@@ -118,10 +123,11 @@ export function UsersPage({
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex items-center justify-end">
+      <div className="flex items-center gap-2">
+        <PeriodFilter value={period} onChange={setPeriod} />
         <Button
           onClick={() => setShowInvite(true)}
-          className="shrink-0"
+          className="ml-auto shrink-0"
           aria-label="Invite member"
         >
           <UserPlus className="size-3.5" aria-hidden />
