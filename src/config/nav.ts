@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Tags,
   Users,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 
@@ -28,7 +29,8 @@ export type NavIconName =
   | "message-plus"
   | "briefcase"
   | "share"
-  | "log";
+  | "log"
+  | "wallet";
 
 export const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   library:        Library,
@@ -43,6 +45,7 @@ export const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   briefcase:      Briefcase,
   share:          Share2,
   log:            FileClock,
+  wallet:         Wallet,
 };
 
 export type NavItem = {
@@ -108,7 +111,7 @@ export const MANAGER_NAV: NavSection[] = [
 ];
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Admin — manager nav with Users added into the Platform section
+// Admin — manager nav with Users + Plans added into the Platform section
 // ──────────────────────────────────────────────────────────────────────────────
 export const ADMIN_NAV: NavSection[] = MANAGER_NAV.map((section) => {
   if (section.label !== "Platform") return section;
@@ -116,6 +119,7 @@ export const ADMIN_NAV: NavSection[] = MANAGER_NAV.map((section) => {
     ...section,
     items: [
       { label: "Users", href: "/manage/users", icon: "users", mobile: true } as NavItem,
+      { label: "Plans", href: "/manage/plans", icon: "wallet" } as NavItem,
       ...section.items,
     ],
   };
