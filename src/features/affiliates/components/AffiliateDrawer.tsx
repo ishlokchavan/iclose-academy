@@ -8,19 +8,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { referralLink } from "../constants";
 import { deleteAffiliateAction } from "../server/actions";
 import type { AffiliateDetail, TreeNode } from "../server/queries";
-
-function fmtDateTime(iso: string) {
-  return new Date(iso).toLocaleString("en-GB", {
-    day: "numeric", month: "short", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
-  });
-}
-
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-GB", {
-    day: "numeric", month: "short", year: "numeric",
-  });
-}
+import { formatDate as fmtDate, formatDateTime as fmtDateTime } from "@/lib/utils/date";
 
 export function AffiliateDrawer({
   open, loading, detail, onClose, onDeleted,

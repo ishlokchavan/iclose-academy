@@ -10,6 +10,7 @@ import { StatusBadge } from "@/features/topics/components/StatusBadge";
 import { getStaffTopics } from "@/features/topics/server/queries";
 import type { TopicStatus } from "@/features/topics/types";
 import { cn } from "@/lib/utils/cn";
+import { formatDateTime } from "@/lib/utils/date";
 
 export const metadata: Metadata = { title: "Topics" };
 
@@ -105,7 +106,7 @@ export default async function ManageTopicsPage({ searchParams }: Props) {
                         </span>
                       )}
                       <span className="ml-auto">
-                        Updated {new Date(t.updated_at).toLocaleDateString()}
+                        Updated {formatDateTime(t.updated_at)}
                       </span>
                     </div>
                   </div>

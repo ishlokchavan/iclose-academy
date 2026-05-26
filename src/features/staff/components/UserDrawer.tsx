@@ -17,6 +17,7 @@ import {
   updateUserNameAction,
 } from "@/features/staff/server/user-actions";
 import type { StaffUserRow } from "@/features/staff/server/user-queries";
+import { formatDateTime as formatDate } from "@/lib/utils/date";
 import type { Database } from "@/types/db";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -32,13 +33,6 @@ function initials(u: StaffUserRow) {
     .toUpperCase();
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
 
 const ROLE_LABEL: Record<AppRole, string> = {
   learner: "Learner",

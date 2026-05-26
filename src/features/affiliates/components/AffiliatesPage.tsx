@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { AffiliateDrawer } from "./AffiliateDrawer";
 import type { AffiliateDetail, AffiliateOverview, AffiliateRow } from "../server/queries";
+import { formatDateTime } from "@/lib/utils/date";
 
 type SortKey = "referrals" | "network" | "clicks" | "recent";
 
@@ -25,12 +26,6 @@ function initials(name: string | null, email: string) {
     .slice(0, 2)
     .join("")
     .toUpperCase();
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-GB", {
-    day: "numeric", month: "short", year: "numeric",
-  });
 }
 
 export function AffiliatesPage({
@@ -211,7 +206,7 @@ export function AffiliatesPage({
                     )}
                   </td>
                   <td className="hidden px-5 py-3.5 text-[13px] text-ink-muted md:table-cell">
-                    {formatDate(a.created_at)}
+                    {formatDateTime(a.created_at)}
                   </td>
                   <td className="pr-4 text-ink-muted">
                     <ChevronRight className="size-4" />

@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { InquiryStatusBadge } from "@/features/inquiries/components/InquiryStatusBadge";
 import { getInquiriesForLearner } from "@/features/inquiries/server/queries";
 import { requireUser } from "@/lib/auth/guards";
+import { formatDateTime } from "@/lib/utils/date";
 
 export const metadata: Metadata = { title: "My inquiries" };
 
@@ -55,7 +56,7 @@ export default async function MyInquiriesPage({ searchParams }: Props) {
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 <InquiryStatusBadge status={i.status} />
                 <span className="ml-auto text-[11px] text-ink-muted">
-                  {new Date(i.created_at).toLocaleString()}
+                  {formatDateTime(i.created_at)}
                 </span>
               </div>
               <p className="text-sm text-ink whitespace-pre-line">{i.description}</p>

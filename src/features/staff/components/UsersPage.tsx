@@ -8,7 +8,11 @@ import { RoleBadge } from "@/components/ui/role-badge";
 import { InviteUserModal } from "@/features/staff/components/InviteUserModal";
 import { UserDrawer } from "@/features/staff/components/UserDrawer";
 import type { StaffUserRow } from "@/features/staff/server/user-queries";
+import { compareBy, SortHeader, type SortState } from "@/components/patterns/SortHeader";
+import { formatDateTime } from "@/lib/utils/date";
 import type { Database } from "@/types/db";
+
+type UsersSortKey = "name" | "email" | "role" | "joined";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 type Tab = "learners" | "staff" | "admin";
@@ -33,14 +37,6 @@ function initials(u: StaffUserRow) {
     .toUpperCase();
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
 export function UsersPage({
   users,
   selfId,
@@ -52,6 +48,7 @@ export function UsersPage({
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showInvite, setShowInvite] = useState(false);
+  const [sort, setSort] = useState<SortState<UsersSortKey>>({ key: "joined", dir: "desc" });
 
   const counts = useMemo(
     () => ({
@@ -64,14 +61,21 @@ export function UsersPage({
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return users.filter(tabFilter(tab)).filter((u) => {
+    const filtered = users.filter(tabFilter(tab)).filter((u) => {
       if (!q) return true;
       return (
         u.full_name?.toLowerCase().includes(q) ||
         u.email?.toLowerCase().includes(q)
       );
     });
-  }, [users, tab, search]);
+    const getters: Record<UsersSortKey, (u: StaffUserRow) => unknown> = {
+      name:   (u) => u.full_name ?? u.email ?? "",
+      email:  (u) => u.email ?? "",
+      role:   (u) => u.role,
+      joined: (u) => u.created_at,
+    };
+    return [...filtered].sort(compareBy(getters[sort.key], sort.dir));
+  }, [users, tab, search, sort]);
 
   const selectedUser = users.find((u) => u.id === selectedId) ?? null;
 
@@ -142,14 +146,17 @@ export function UsersPage({
           <table className="w-full">
             <thead className="border-b border-hairline bg-surface-subtle/50 text-left">
               <tr>
-                <th className="px-5 py-3 text-[11px] font-semibold uppercase tracking-wide text-ink-muted">
-                  User
+                <th className="px-5 py-3">
+                  <SortHeader<UsersSortKey> label="User" sortKey="name" current={sort} onChange={setSort} />
                 </th>
-                <th className="hidden px-5 py-3 text-[11px] font-semibold uppercase tracking-wide text-ink-muted sm:table-cell">
-                  {tab === "learners" ? "Plan" : "Role"}
+                <th className="hidden px-5 py-3 sm:table-cell">
+                  <SortHeader<UsersSortKey>
+                    label={tab === "learners" ? "Plan" : "Role"}
+                    sortKey="role" current={sort} onChange={setSort}
+                  />
                 </th>
-                <th className="hidden px-5 py-3 text-[11px] font-semibold uppercase tracking-wide text-ink-muted md:table-cell">
-                  Joined
+                <th className="hidden px-5 py-3 md:table-cell">
+                  <SortHeader<UsersSortKey> label="Joined" sortKey="joined" current={sort} onChange={setSort} />
                 </th>
                 <th className="w-10 px-4 py-3" />
               </tr>
@@ -185,7 +192,7 @@ export function UsersPage({
                     )}
                   </td>
                   <td className="hidden px-5 py-3.5 text-[13px] text-ink-muted md:table-cell">
-                    {formatDate(u.created_at)}
+                    {formatDateTime(u.created_at)}
                   </td>
                   <td className="px-4 py-3.5 text-ink-muted">
                     <ChevronRight className="size-4" aria-hidden />

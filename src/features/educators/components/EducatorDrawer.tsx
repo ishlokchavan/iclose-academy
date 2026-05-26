@@ -12,14 +12,8 @@ import {
   updateEducatorAction,
 } from "@/features/educators/server/actions";
 import type { EducatorRecord } from "@/features/educators/server/queries";
+import { formatDateTime as formatDate } from "@/lib/utils/date";
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
 
 function initials(e: EducatorRecord) {
   return (e.name || "E")

@@ -7,14 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AddEducatorModal } from "@/features/educators/components/AddEducatorModal";
 import { EducatorDrawer } from "@/features/educators/components/EducatorDrawer";
 import type { EducatorRecord } from "@/features/educators/server/queries";
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
+import { formatDateTime as formatDate } from "@/lib/utils/date";
 
 function initials(e: EducatorRecord) {
   return (e.name || "E")

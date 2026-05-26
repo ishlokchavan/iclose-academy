@@ -6,6 +6,10 @@ import { useMemo, useState } from "react";
 import { HireDrawer } from "@/features/hires/components/HireDrawer";
 import { HIRE_STATUSES } from "@/features/hires/constants";
 import type { HireApplication } from "@/features/hires/server/queries";
+import { compareBy, SortHeader, type SortState } from "@/components/patterns/SortHeader";
+import { formatDateTime as formatDate, formatShortDateTime as formatShortDate } from "@/lib/utils/date";
+
+type HiresSortKey = "name" | "email" | "status" | "applied";
 
 const STATUS_DOT: Record<string, string> = {
   pending:     "bg-amber-400",
@@ -32,17 +36,7 @@ const DATE_RANGES = [
 
 type DateRange = (typeof DATE_RANGES)[number]["value"];
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-GB", {
-    day: "numeric", month: "short", year: "numeric",
-  });
-}
-
-function formatShortDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-GB", {
-    day: "numeric", month: "short",
-  });
-}
+// formatters imported from @/lib/utils/date
 
 function dateRangeStart(range: DateRange): Date | null {
   const now = new Date();
@@ -55,12 +49,13 @@ function dateRangeStart(range: DateRange): Date | null {
 export function HiresPage({ applications }: { applications: HireApplication[] }) {
   const [search, setSearch]             = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sort, setSort]                 = useState<SortState<HiresSortKey>>({ key: "applied", dir: "desc" });
   const [dateRange, setDateRange]       = useState<DateRange>("all");
   const [selected, setSelected]         = useState<HireApplication | null>(null);
 
   const filtered = useMemo(() => {
     const rangeStart = dateRangeStart(dateRange);
-    return applications.filter((a) => {
+    const list = applications.filter((a) => {
       if (statusFilter !== "all" && a.status !== statusFilter) return false;
       if (rangeStart && new Date(a.created_at) < rangeStart) return false;
       if (!search.trim()) return true;
@@ -73,7 +68,14 @@ export function HiresPage({ applications }: { applications: HireApplication[] })
         a.status.toLowerCase().includes(q)
       );
     });
-  }, [applications, search, statusFilter, dateRange]);
+    const getters: Record<HiresSortKey, (a: HireApplication) => unknown> = {
+      name:    (a) => `${a.first_name} ${a.last_name}`,
+      email:   (a) => a.email,
+      status:  (a) => a.status,
+      applied: (a) => a.created_at,
+    };
+    return [...list].sort(compareBy(getters[sort.key], sort.dir));
+  }, [applications, search, statusFilter, dateRange, sort]);
 
   const hasFilters = search || statusFilter !== "all" || dateRange !== "all";
 
@@ -137,10 +139,10 @@ export function HiresPage({ applications }: { applications: HireApplication[] })
         <table className="w-full border-collapse text-left">
           <thead>
             <tr className="border-b border-hairline bg-surface-subtle/60">
-              <th className="px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-ink-muted">Applicant</th>
-              <th className="hidden px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-ink-muted sm:table-cell">Contact</th>
-              <th className="hidden px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-ink-muted md:table-cell">Status</th>
-              <th className="hidden px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-ink-muted lg:table-cell">Applied</th>
+              <th className="px-5 py-3"><SortHeader<HiresSortKey> label="Applicant" sortKey="name" current={sort} onChange={setSort} /></th>
+              <th className="hidden px-5 py-3 sm:table-cell"><SortHeader<HiresSortKey> label="Contact" sortKey="email" current={sort} onChange={setSort} /></th>
+              <th className="hidden px-5 py-3 md:table-cell"><SortHeader<HiresSortKey> label="Status" sortKey="status" current={sort} onChange={setSort} /></th>
+              <th className="hidden px-5 py-3 lg:table-cell"><SortHeader<HiresSortKey> label="Applied" sortKey="applied" current={sort} onChange={setSort} /></th>
               <th className="w-10" />
             </tr>
           </thead>

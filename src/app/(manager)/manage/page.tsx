@@ -9,6 +9,7 @@ import { getAllInquiriesForStaff, getInquiryStats } from "@/features/inquiries/s
 import { getStaffTopics } from "@/features/topics/server/queries";
 import type { TopicStatus } from "@/features/topics/types";
 import { cn } from "@/lib/utils/cn";
+import { formatDateTime } from "@/lib/utils/date";
 
 export const metadata: Metadata = { title: "Overview" };
 
@@ -71,7 +72,7 @@ export default async function ManagerOverviewPage() {
                 <div className="mb-1.5 flex items-center gap-2">
                   <InquiryStatusBadge status={i.status} />
                   <span className="ml-auto text-[11px] text-ink-muted">
-                    {new Date(i.created_at).toLocaleString()}
+                    {formatDateTime(i.created_at)}
                   </span>
                 </div>
                 <p className="line-clamp-2 text-[14px] text-ink">{i.description}</p>

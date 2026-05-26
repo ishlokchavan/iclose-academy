@@ -1,14 +1,8 @@
 "use client";
 
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { formatDateTimeSeconds as fmtDateTime } from "@/lib/utils/date";
 import type { AuditLogRow } from "../server/queries";
-
-function fmtDateTime(iso: string) {
-  return new Date(iso).toLocaleString("en-GB", {
-    day: "numeric", month: "short", year: "numeric",
-    hour: "2-digit", minute: "2-digit", second: "2-digit",
-  });
-}
 
 export function AuditDetailDrawer({
   row, onClose,

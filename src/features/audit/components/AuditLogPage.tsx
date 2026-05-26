@@ -3,6 +3,7 @@
 import { ChevronRight, Database, Search, Server, User, Wand2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { formatDateTimeSeconds as fmtDateTime } from "@/lib/utils/date";
 import type { AuditFacets, AuditLogRow } from "../server/queries";
 import { AuditDetailDrawer } from "./AuditDetailDrawer";
 
@@ -12,13 +13,6 @@ const SOURCE_PILL: Record<string, { label: string; cls: string; icon: React.Comp
   api:    { label: "API",    cls: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: Server },
   system: { label: "System", cls: "bg-amber-50 text-amber-700 border-amber-200",    icon: Wand2 },
 };
-
-function fmtDateTime(iso: string) {
-  return new Date(iso).toLocaleString("en-GB", {
-    day: "numeric", month: "short", year: "numeric",
-    hour: "2-digit", minute: "2-digit", second: "2-digit",
-  });
-}
 
 export function AuditLogPage({
   rows, facets,

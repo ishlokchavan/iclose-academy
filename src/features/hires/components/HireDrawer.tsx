@@ -4,6 +4,7 @@ import { ExternalLink, FileText, Instagram, Mail, MessageSquare, Phone, Send } f
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { formatDateTime as formatDate } from "@/lib/utils/date";
 import { HIRE_STATUSES, type HireStatus } from "@/features/hires/constants";
 import {
   addHireRemarkAction,
@@ -21,12 +22,7 @@ const STATUS_STYLES: Record<string, string> = {
   rejected:    "bg-red-50 text-red-600 border-red-200",
 };
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-GB", {
-    day: "numeric", month: "short", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
-  });
-}
+// formatDate imported from @/lib/utils/date below
 
 function formatRelative(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();

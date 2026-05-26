@@ -8,6 +8,7 @@ import { InquiryStatusBadge } from "@/features/inquiries/components/InquiryStatu
 import { InquiryStatusSelect } from "@/features/inquiries/components/InquiryStatusSelect";
 import { getAllInquiriesForStaff, type InquiryStatus } from "@/features/inquiries/server/queries";
 import { cn } from "@/lib/utils/cn";
+import { formatDateTime } from "@/lib/utils/date";
 
 export const metadata: Metadata = { title: "Inquiries" };
 
@@ -66,7 +67,7 @@ export default async function ManageInquiriesPage({ searchParams }: Props) {
                 <div className="flex items-center gap-2">
                   <InquiryStatusBadge status={i.status} />
                   <span className="text-[11px] text-ink-muted">
-                    {new Date(i.created_at).toLocaleString()}
+                    {formatDateTime(i.created_at)}
                   </span>
                 </div>
                 <InquiryStatusSelect inquiryId={i.id} initial={i.status} />
