@@ -1,4 +1,5 @@
 import { LogOut } from "lucide-react";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/features/auth/server/actions";
@@ -18,19 +19,25 @@ export function UserMenu({ user, className }: { user: SessionUser; className?: s
 
   return (
     <div className={cn("flex items-center gap-3", className)}>
-      <div className="hidden text-right sm:block">
-        <p className="truncate text-sm font-medium text-ink">{user.fullName ?? user.email}</p>
-        <p className="flex items-center justify-end gap-1 text-[11px] font-mono uppercase tracking-widest text-ink-muted">
-          <RoleIcon className="size-3" aria-hidden />
-          {ROLE_LABEL[user.role].label}
-        </p>
-      </div>
-      <div
-        className="grid size-9 place-items-center rounded-full border border-hairline bg-surface-subtle text-sm font-medium text-ink"
-        aria-hidden
+      <Link
+        href="/profile"
+        aria-label="Open your profile"
+        className="group flex items-center gap-3 rounded-full transition-opacity hover:opacity-80"
       >
-        {initials || "U"}
-      </div>
+        <div className="hidden text-right sm:block">
+          <p className="truncate text-sm font-medium text-ink">{user.fullName ?? user.email}</p>
+          <p className="flex items-center justify-end gap-1 text-[11px] font-mono uppercase tracking-widest text-ink-muted">
+            <RoleIcon className="size-3" aria-hidden />
+            {ROLE_LABEL[user.role].label}
+          </p>
+        </div>
+        <div
+          className="grid size-9 place-items-center rounded-full border border-hairline bg-surface-subtle text-sm font-medium text-ink group-hover:border-ink/25"
+          aria-hidden
+        >
+          {initials || "U"}
+        </div>
+      </Link>
       <form action={signOutAction}>
         <Button type="submit" variant="ghost" size="icon" aria-label="Sign out">
           <LogOut className="size-4" />
