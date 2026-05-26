@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronRight, MousePointerClick, Search, Users, Wallet } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { AffiliateDrawer } from "./AffiliateDrawer";
 import type { AffiliateDetail, AffiliateOverview, AffiliateRow } from "../server/queries";
@@ -49,6 +49,19 @@ export function AffiliatesPage({
   const [detail, setDetail]   = useState<AffiliateDetail | null>(null);
   const [detailLoading, setDL] = useState(false);
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
+
+  // When the server returns fresh data (after revalidatePath), the optimistic
+  // deletedIds set is no longer needed — keeping it would double-discount the
+  // overview tile. Clear any tracked ids that the server has already removed.
+  useEffect(() => {
+    setDeletedIds((prev) => {
+      if (prev.size === 0) return prev;
+      const present = new Set(affiliates.map((a) => a.id));
+      const next = new Set<string>();
+      for (const id of prev) if (present.has(id)) next.add(id);
+      return next.size === prev.size ? prev : next;
+    });
+  }, [affiliates]);
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
