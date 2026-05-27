@@ -1,8 +1,3 @@
-// =============================================================================
-// AUTO-GENERATED — do not edit by hand.
-// Regenerate with: pnpm db:types  (or via the Supabase MCP `generate_typescript_types`).
-// =============================================================================
-
 export type Json =
   | string
   | number
@@ -19,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      areas: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          description: string | null
+          educator_id: string | null
+          id: string
+          name: string
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          description?: string | null
+          educator_id?: string | null
+          id?: string
+          name: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          description?: string | null
+          educator_id?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "areas_educator_id_fkey"
+            columns: ["educator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -67,46 +106,37 @@ export type Database = {
         }
         Relationships: []
       }
-      areas: {
+      commissions: {
         Row: {
-          archived_at: string | null
-          created_at: string
-          description: string | null
-          educator_id: string | null
+          amount: number | null
+          created_at: string | null
           id: string
-          name: string
-          slug: string
-          sort_order: number
-          updated_at: string
+          partner_id: string | null
+          period: string | null
+          status: string | null
         }
         Insert: {
-          archived_at?: string | null
-          created_at?: string
-          description?: string | null
-          educator_id?: string | null
+          amount?: number | null
+          created_at?: string | null
           id?: string
-          name: string
-          slug: string
-          sort_order?: number
-          updated_at?: string
+          partner_id?: string | null
+          period?: string | null
+          status?: string | null
         }
         Update: {
-          archived_at?: string | null
-          created_at?: string
-          description?: string | null
-          educator_id?: string | null
+          amount?: number | null
+          created_at?: string | null
           id?: string
-          name?: string
-          slug?: string
-          sort_order?: number
-          updated_at?: string
+          partner_id?: string | null
+          period?: string | null
+          status?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "areas_educator_id_fkey"
-            columns: ["educator_id"]
+            foreignKeyName: "commissions_partner_id_fkey"
+            columns: ["partner_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "partners"
             referencedColumns: ["id"]
           },
         ]
@@ -541,63 +571,6 @@ export type Database = {
           },
         ]
       }
-      referral_clicks: {
-        Row: {
-          code: string
-          converted_lead_id: string | null
-          country: string | null
-          created_at: string
-          id: string
-          ip_hash: string | null
-          landing_path: string | null
-          lead_id: string | null
-          referer: string | null
-          user_agent: string | null
-          visitor_id: string | null
-        }
-        Insert: {
-          code: string
-          converted_lead_id?: string | null
-          country?: string | null
-          created_at?: string
-          id?: string
-          ip_hash?: string | null
-          landing_path?: string | null
-          lead_id?: string | null
-          referer?: string | null
-          user_agent?: string | null
-          visitor_id?: string | null
-        }
-        Update: {
-          code?: string
-          converted_lead_id?: string | null
-          country?: string | null
-          created_at?: string
-          id?: string
-          ip_hash?: string | null
-          landing_path?: string | null
-          lead_id?: string | null
-          referer?: string | null
-          user_agent?: string | null
-          visitor_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "referral_clicks_converted_lead_id_fkey"
-            columns: ["converted_lead_id"]
-            isOneToOne: false
-            referencedRelation: "leads"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "referral_clicks_lead_id_fkey"
-            columns: ["lead_id"]
-            isOneToOne: false
-            referencedRelation: "leads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       membership_plans: {
         Row: {
           agent_split_pct: number
@@ -706,40 +679,43 @@ export type Database = {
           },
         ]
       }
-      push_subscriptions: {
+      partners: {
         Row: {
-          auth: string
-          created_at: string
-          endpoint: string
+          code: string
+          created_at: string | null
+          email: string
           id: string
-          p256dh: string
-          user_agent: string | null
-          user_id: string
+          name: string
+          phone: string | null
+          status: string | null
+          user_id: string | null
         }
         Insert: {
-          auth: string
-          created_at?: string
-          endpoint: string
+          code: string
+          created_at?: string | null
+          email: string
           id?: string
-          p256dh: string
-          user_agent?: string | null
-          user_id: string
+          name: string
+          phone?: string | null
+          status?: string | null
+          user_id?: string | null
         }
         Update: {
-          auth?: string
-          created_at?: string
-          endpoint?: string
+          code?: string
+          created_at?: string | null
+          email?: string
           id?: string
-          p256dh?: string
-          user_agent?: string | null
-          user_id?: string
+          name?: string
+          phone?: string | null
+          status?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "push_subscriptions_user_id_fkey"
+            foreignKeyName: "partners_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "user_emails"
             referencedColumns: ["id"]
           },
         ]
@@ -781,6 +757,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string
+          email: string | null
           full_name: string | null
           headline: string | null
           id: string
@@ -792,6 +769,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           headline?: string | null
           id: string
@@ -803,6 +781,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           headline?: string | null
           id?: string
@@ -891,6 +870,133 @@ export type Database = {
           sort_order?: number
         }
         Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_clicks: {
+        Row: {
+          code: string
+          converted_lead_id: string | null
+          country: string | null
+          created_at: string
+          id: string
+          ip_hash: string | null
+          landing_path: string | null
+          lead_id: string | null
+          referer: string | null
+          user_agent: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          code: string
+          converted_lead_id?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          landing_path?: string | null
+          lead_id?: string | null
+          referer?: string | null
+          user_agent?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          code?: string
+          converted_lead_id?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          landing_path?: string | null
+          lead_id?: string | null
+          referer?: string | null
+          user_agent?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_clicks_converted_lead_id_fkey"
+            columns: ["converted_lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_clicks_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_conversions: {
+        Row: {
+          converted_user_id: string | null
+          created_at: string | null
+          id: string
+          partner_id: string | null
+          type: string | null
+        }
+        Insert: {
+          converted_user_id?: string | null
+          created_at?: string | null
+          id?: string
+          partner_id?: string | null
+          type?: string | null
+        }
+        Update: {
+          converted_user_id?: string | null
+          created_at?: string | null
+          id?: string
+          partner_id?: string | null
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_conversions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saved_items: {
         Row: {
@@ -1041,7 +1147,7 @@ export type Database = {
           cover_url: string | null
           created_at: string
           description: string | null
-          educator_id: string
+          educator_id: string | null
           educator_record_id: string | null
           id: string
           published_at: string | null
@@ -1059,7 +1165,7 @@ export type Database = {
           cover_url?: string | null
           created_at?: string
           description?: string | null
-          educator_id: string
+          educator_id?: string | null
           educator_record_id?: string | null
           id?: string
           published_at?: string | null
@@ -1077,7 +1183,7 @@ export type Database = {
           cover_url?: string | null
           created_at?: string
           description?: string | null
-          educator_id?: string
+          educator_id?: string | null
           educator_record_id?: string | null
           id?: string
           published_at?: string | null
@@ -1141,44 +1247,10 @@ export type Database = {
     Functions: {
       bump_referral_count: { Args: { p_lead_id: string }; Returns: undefined }
       current_user_role: { Args: never; Returns: string }
+      delete_user: { Args: { p_profile_id: string }; Returns: undefined }
       generate_referral_code: { Args: { p_len?: number }; Returns: string }
       get_auth_user_id_by_email: { Args: { p_email: string }; Returns: string }
-      referral_stats_for_code: {
-        Args: { p_code: string }
-        Returns: {
-          total_clicks: number
-          total_referrals: number
-          unique_visitors: number
-        }[]
-      }
-      referral_tree_descendants: {
-        Args: { p_code: string; p_max_depth?: number }
-        Returns: {
-          id: string
-          email: string
-          name: string
-          referral_code: string | null
-          referred_by_code: string | null
-          referred_by_lead_id: string | null
-          created_at: string
-          is_verified: boolean
-          depth: number
-          parent_id: string | null
-        }[]
-      }
-      referral_tree_ancestors: {
-        Args: { p_lead_id: string; p_max_depth?: number }
-        Returns: {
-          id: string
-          email: string
-          name: string
-          referral_code: string | null
-          referred_by_code: string | null
-          referred_by_lead_id: string | null
-          created_at: string
-          depth: number
-        }[]
-      }
+      get_full_user_profile: { Args: { p_id: string }; Returns: Json }
       insert_notification: {
         Args: {
           p_actor_id: string
@@ -1220,6 +1292,42 @@ export type Database = {
         }
         Returns: undefined
       }
+      referral_stats_for_code: {
+        Args: { p_code: string }
+        Returns: {
+          total_clicks: number
+          total_referrals: number
+          unique_visitors: number
+        }[]
+      }
+      referral_tree_ancestors: {
+        Args: { p_lead_id: string; p_max_depth?: number }
+        Returns: {
+          created_at: string
+          depth: number
+          email: string
+          id: string
+          name: string
+          referral_code: string
+          referred_by_code: string
+          referred_by_lead_id: string
+        }[]
+      }
+      referral_tree_descendants: {
+        Args: { p_code: string; p_max_depth?: number }
+        Returns: {
+          created_at: string
+          depth: number
+          email: string
+          id: string
+          is_verified: boolean
+          name: string
+          parent_id: string
+          referral_code: string
+          referred_by_code: string
+          referred_by_lead_id: string
+        }[]
+      }
       reroute_inquiry: { Args: { p_inquiry_id: string }; Returns: undefined }
       set_app_metadata_role: {
         Args: { p_role: string; p_user_id: string }
@@ -1227,6 +1335,16 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      upsert_user_lead: {
+        Args: {
+          p_email: string
+          p_first_name: string
+          p_last_name: string
+          p_phone: string
+          p_profile_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "learner" | "educator" | "manager" | "admin"
