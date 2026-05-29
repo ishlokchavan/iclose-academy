@@ -11,7 +11,7 @@ import { RoleBadge } from "@/components/ui/role-badge";
 import { InviteUserModal } from "@/features/staff/components/InviteUserModal";
 import { UserDrawer } from "@/features/staff/components/UserDrawer";
 import type { StaffUserRow } from "@/features/staff/server/user-queries";
-import { formatDateTime } from "@/lib/utils/date";
+import { formatDateTime, formatUpdatedAt } from "@/lib/utils/date";
 import type { Database } from "@/types/db";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -115,6 +115,17 @@ export function UsersPage({
       cell: ({ row }) => (
         <span className="text-[13px] text-ink-muted">
           {formatDateTime(row.original.created_at)}
+        </span>
+      ),
+    },
+    {
+      id: "updated",
+      accessorKey: "updated_at",
+      header: "Updated",
+      meta: { className: "hidden xl:table-cell" },
+      cell: ({ row }) => (
+        <span className="text-[13px] text-ink-muted">
+          {formatUpdatedAt(row.original.created_at, row.original.updated_at)}
         </span>
       ),
     },

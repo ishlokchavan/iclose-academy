@@ -17,6 +17,7 @@ export type PartnerAdminRow = {
   consent_marketing: boolean;
   consented_at: string | null;
   created_at: string | null;
+  updated_at: string | null;
   clicks: number;
   signups: number;
 };
@@ -55,7 +56,7 @@ export async function getAllPartners(): Promise<PartnerAdminRow[]> {
     admin
       .from("partners")
       .select(
-        "id, user_id, name, email, phone, code, status, is_verified, verified_at, consent_marketing, consented_at, created_at",
+        "id, user_id, name, email, phone, code, status, is_verified, verified_at, consent_marketing, consented_at, created_at, updated_at",
       )
       .order("created_at", { ascending: false }),
     admin.from("referral_clicks").select("code"),

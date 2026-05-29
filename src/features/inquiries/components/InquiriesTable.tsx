@@ -10,7 +10,7 @@ import { filterByPeriod, PeriodFilter, type Period } from "@/components/patterns
 import { InquiryStatusBadge } from "@/features/inquiries/components/InquiryStatusBadge";
 import { InquiryStatusSelect } from "@/features/inquiries/components/InquiryStatusSelect";
 import type { InquiryRow } from "@/features/inquiries/server/queries";
-import { formatDateTime } from "@/lib/utils/date";
+import { formatDateTime, formatUpdatedAt } from "@/lib/utils/date";
 
 export function InquiriesTable({ inquiries }: { inquiries: InquiryRow[] }) {
   const [period, setPeriod] = useState<Period>("all");
@@ -116,6 +116,17 @@ export function InquiriesTable({ inquiries }: { inquiries: InquiryRow[] }) {
       cell: ({ row }) => (
         <span className="whitespace-nowrap text-[12px] tabular-nums text-ink-muted">
           {formatDateTime(row.original.created_at)}
+        </span>
+      ),
+    },
+    {
+      id: "updated",
+      accessorKey: "updated_at",
+      header: "Updated",
+      meta: { className: "hidden xl:table-cell" },
+      cell: ({ row }) => (
+        <span className="whitespace-nowrap text-[12px] tabular-nums text-ink-muted">
+          {formatUpdatedAt(row.original.created_at, row.original.updated_at)}
         </span>
       ),
     },

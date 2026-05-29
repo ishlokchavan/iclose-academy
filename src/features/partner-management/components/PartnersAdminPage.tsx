@@ -12,7 +12,7 @@ import { useViewMode, ViewToggle } from "@/components/patterns/ViewToggle";
 import { MembersTree } from "@/features/members/components/MembersTree";
 import type { TreeMember } from "@/features/members/server/queries";
 import { partnerReferralLink } from "@/features/partner-management/link";
-import { formatDateTime } from "@/lib/utils/date";
+import { formatDateTime, formatUpdatedAt } from "@/lib/utils/date";
 
 import { AddPartnerModal } from "./AddPartnerModal";
 import { PartnerAdminDrawer } from "./PartnerAdminDrawer";
@@ -165,6 +165,17 @@ export function PartnersAdminPage({
       cell: ({ row }) => (
         <span className="text-[13px] text-ink-muted">
           {row.original.created_at ? formatDateTime(row.original.created_at) : "—"}
+        </span>
+      ),
+    },
+    {
+      id: "updated",
+      accessorKey: "updated_at",
+      header: "Updated",
+      meta: { className: "hidden xl:table-cell" },
+      cell: ({ row }) => (
+        <span className="text-[13px] text-ink-muted">
+          {formatUpdatedAt(row.original.created_at, row.original.updated_at)}
         </span>
       ),
     },

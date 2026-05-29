@@ -5,6 +5,8 @@ import { Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { DataTable } from "@/components/patterns/DataTable";
+import { formatDateTime, formatUpdatedAt } from "@/lib/utils/date";
+
 import { PlanDrawer } from "./PlanDrawer";
 import type { PlanWithCounts } from "../server/queries";
 
@@ -114,6 +116,26 @@ export function PlansPage({ plans }: { plans: PlanWithCounts[] }) {
       meta: { align: "right", className: "hidden xl:table-cell" },
       cell: ({ row }) => (
         <span className="text-[12px] tabular-nums text-ink-muted">{row.original.order}</span>
+      ),
+    },
+    {
+      id: "created",
+      accessorKey: "created_at",
+      header: "Created",
+      meta: { className: "hidden xl:table-cell" },
+      cell: ({ row }) => (
+        <span className="text-[13px] text-ink-muted">{formatDateTime(row.original.created_at)}</span>
+      ),
+    },
+    {
+      id: "updated",
+      accessorKey: "updated_at",
+      header: "Updated",
+      meta: { className: "hidden xl:table-cell" },
+      cell: ({ row }) => (
+        <span className="text-[13px] text-ink-muted">
+          {formatUpdatedAt(row.original.created_at, row.original.updated_at)}
+        </span>
       ),
     },
   ], []);

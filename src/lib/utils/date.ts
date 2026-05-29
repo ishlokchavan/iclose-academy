@@ -62,3 +62,20 @@ export function formatShortDateTime(iso: string | Date | null | undefined): stri
   const d = parse(iso);
   return d ? shortDateTime.format(d) : "—";
 }
+
+/**
+ * "Updated" column helper: returns a dash when the row effectively hasn't
+ * been edited (updated_at within 2s of created_at — covers default-now
+ * timing on insert), otherwise the formatted updated_at. Cuts visual noise
+ * for tables of mostly never-edited rows.
+ */
+export function formatUpdatedAt(
+  createdAt: string | Date | null | undefined,
+  updatedAt: string | Date | null | undefined,
+): string {
+  const c = parse(createdAt);
+  const u = parse(updatedAt);
+  if (!u) return "—";
+  if (c && Math.abs(u.getTime() - c.getTime()) <= 2000) return "—";
+  return dateTime.format(u);
+}

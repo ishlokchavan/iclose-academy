@@ -24,6 +24,7 @@ export type MemberRow = {
   referral_count: number;       // direct referrals
   network_size: number;         // total downstream (all tiers)
   created_at: string;
+  updated_at: string;
   source: string | null;
   referred_by_code: string | null;
   referred_by_lead_id: string | null;
@@ -39,7 +40,7 @@ export type MemberRow = {
 // Kept as one literal string so Supabase's generated typings can narrow
 // the response shape. Keep both call sites in sync if you edit this.
 const LEAD_FIELDS =
-  "id, name, first_name, last_name, email, phone, intent, focus, plan_key, is_verified, verified_at, consent_marketing, consented_at, user_agent, referer, referral_code, referral_count, created_at, source, referred_by_code, referred_by_lead_id";
+  "id, name, first_name, last_name, email, phone, intent, focus, plan_key, is_verified, verified_at, consent_marketing, consented_at, user_agent, referer, referral_code, referral_count, created_at, updated_at, source, referred_by_code, referred_by_lead_id";
 
 export type TreeNode = {
   id: string;

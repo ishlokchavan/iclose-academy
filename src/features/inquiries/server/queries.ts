@@ -13,6 +13,7 @@ export type InquiryRow = {
   status: InquiryStatus;
   subarea: string | null;
   created_at: string;
+  updated_at: string;
   resolved_at: string | null;
   area: { id: string; slug: string; name: string } | null;
   type: { id: string; slug: string; name: string } | null;
@@ -22,7 +23,7 @@ export type InquiryRow = {
 };
 
 const SELECT = `
-  id, description, email, phone, status, subarea, created_at, resolved_at,
+  id, description, email, phone, status, subarea, created_at, updated_at, resolved_at,
   area:areas(id, slug, name),
   type:property_types(id, slug, name),
   inquiry_subtypes(subtype:property_subtypes(id, slug, name)),
@@ -40,6 +41,7 @@ function shape(row: any): InquiryRow {
     status:       row.status,
     subarea:      row.subarea,
     created_at:   row.created_at,
+    updated_at:   row.updated_at,
     resolved_at:  row.resolved_at,
     area:         row.area,
     type:         row.type,

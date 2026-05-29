@@ -7,13 +7,14 @@ import { Pencil, Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { toSlug } from "@/features/taxonomy/utils";
 import {
   createAreaAction,
   deleteAreaAction,
   updateAreaAction,
 } from "@/features/taxonomy/server/actions";
+import { toSlug } from "@/features/taxonomy/utils";
 import type { Area } from "@/features/topics/types";
+import { formatDateTime, formatUpdatedAt } from "@/lib/utils/date";
 
 type Educator = { id: string; full_name: string | null };
 type AreaWithEducator = Area & { educator_id?: string | null };
@@ -39,6 +40,12 @@ export function CommunitiesTable({
             <th className="hidden px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-tertiary sm:table-cell">
               Specialist
             </th>
+            <th className="hidden px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-tertiary lg:table-cell">
+              Created
+            </th>
+            <th className="hidden px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-tertiary xl:table-cell">
+              Updated
+            </th>
             <th className="px-4 py-3 text-right">
               {!addOpen && (
                 <Button
@@ -57,7 +64,7 @@ export function CommunitiesTable({
         <tbody className="divide-y divide-hairline">
           {areas.length === 0 && !addOpen && (
             <tr>
-              <td colSpan={3} className="px-6 py-10 text-center">
+              <td colSpan={5} className="px-6 py-10 text-center">
                 <p className="text-[14px] text-ink-muted">No communities yet.</p>
               </td>
             </tr>
@@ -106,7 +113,7 @@ function AreaRow({ area, educators }: { area: AreaWithEducator; educators: Educa
   if (editing) {
     return (
       <tr className="bg-surface-subtle/30">
-        <td colSpan={3} className="px-4 py-3">
+        <td colSpan={5} className="px-4 py-3">
           <form action={save}>
             <div className="flex flex-wrap items-end gap-2">
               <div className="min-w-[160px] flex-1">
@@ -169,6 +176,12 @@ function AreaRow({ area, educators }: { area: AreaWithEducator; educators: Educa
       </td>
       <td className="hidden px-4 py-3 text-[13px] text-ink-muted sm:table-cell">
         {assignedEd?.full_name ?? <span className="text-ink-tertiary">—</span>}
+      </td>
+      <td className="hidden px-4 py-3 text-[13px] text-ink-muted lg:table-cell">
+        {area.created_at ? formatDateTime(area.created_at) : "—"}
+      </td>
+      <td className="hidden px-4 py-3 text-[13px] text-ink-muted xl:table-cell">
+        {formatUpdatedAt(area.created_at, area.updated_at)}
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
@@ -250,7 +263,7 @@ function NewAreaRow({
 
   return (
     <tr className="bg-surface-subtle/30">
-      <td colSpan={3} className="px-4 py-3">
+      <td colSpan={5} className="px-4 py-3">
         <form action={submit}>
           <div className="flex flex-wrap items-end gap-2">
             <div className="min-w-[160px] flex-1">

@@ -14,6 +14,7 @@ export type HireApplication = {
   status: string;
   referer: string | null;
   created_at: string;
+  updated_at: string;
 };
 
 export type HireRemark = {
@@ -29,7 +30,7 @@ export async function getHireApplications(): Promise<HireApplication[]> {
   const admin = createSupabaseAdminClient();
   const { data } = await admin
     .from("intern_applications")
-    .select("id, first_name, last_name, email, phone, instagram, message, resume_path, status, referer, created_at")
+    .select("id, first_name, last_name, email, phone, instagram, message, resume_path, status, referer, created_at, updated_at")
     .order("created_at", { ascending: false });
   return (data ?? []) as HireApplication[];
 }

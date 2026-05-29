@@ -11,7 +11,7 @@ import { filterByPeriod, PeriodFilter, type Period } from "@/components/patterns
 import { AddEducatorModal } from "@/features/educators/components/AddEducatorModal";
 import { EducatorDrawer } from "@/features/educators/components/EducatorDrawer";
 import type { EducatorRecord } from "@/features/educators/server/queries";
-import { formatDateTime } from "@/lib/utils/date";
+import { formatDateTime, formatUpdatedAt } from "@/lib/utils/date";
 
 function initials(e: EducatorRecord) {
   return (e.name || "E")
@@ -100,6 +100,17 @@ export function EducatorsPage({ educators }: { educators: EducatorRecord[] }) {
       meta: { className: "hidden md:table-cell" },
       cell: ({ row }) => (
         <span className="text-[13px] text-ink-muted">{formatDateTime(row.original.created_at)}</span>
+      ),
+    },
+    {
+      id: "updated",
+      accessorKey: "updated_at",
+      header: "Updated",
+      meta: { className: "hidden xl:table-cell" },
+      cell: ({ row }) => (
+        <span className="text-[13px] text-ink-muted">
+          {formatUpdatedAt(row.original.created_at, row.original.updated_at)}
+        </span>
       ),
     },
   ], []);

@@ -9,7 +9,7 @@ import { filterByPeriod, PeriodFilter, type Period } from "@/components/patterns
 import { HireDrawer } from "@/features/hires/components/HireDrawer";
 import { HIRE_STATUSES } from "@/features/hires/constants";
 import type { HireApplication } from "@/features/hires/server/queries";
-import { formatDateTime, formatShortDateTime } from "@/lib/utils/date";
+import { formatDateTime, formatShortDateTime, formatUpdatedAt } from "@/lib/utils/date";
 
 const STATUS_DOT: Record<string, string> = {
   pending:     "bg-amber-400",
@@ -111,6 +111,17 @@ export function HiresPage({ applications }: { applications: HireApplication[] })
       meta: { className: "hidden lg:table-cell" },
       cell: ({ row }) => (
         <span className="text-[13px] text-ink-muted">{formatDateTime(row.original.created_at)}</span>
+      ),
+    },
+    {
+      id: "updated",
+      accessorKey: "updated_at",
+      header: "Updated",
+      meta: { className: "hidden xl:table-cell" },
+      cell: ({ row }) => (
+        <span className="text-[13px] text-ink-muted">
+          {formatUpdatedAt(row.original.created_at, row.original.updated_at)}
+        </span>
       ),
     },
   ], []);

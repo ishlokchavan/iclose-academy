@@ -8,7 +8,7 @@ import { DataTable } from "@/components/patterns/DataTable";
 import { EmailLink } from "@/components/patterns/ContactLink";
 import { filterByPeriod, PeriodFilter, type Period } from "@/components/patterns/PeriodFilter";
 import { useViewMode, ViewToggle } from "@/components/patterns/ViewToggle";
-import { formatDateTime } from "@/lib/utils/date";
+import { formatDateTime, formatUpdatedAt } from "@/lib/utils/date";
 
 import { MemberDrawer } from "./MemberDrawer";
 import { MembersTree } from "./MembersTree";
@@ -216,6 +216,17 @@ export function MembersPage({
       meta: { className: "hidden md:table-cell" },
       cell: ({ row }) => (
         <span className="text-[13px] text-ink-muted">{formatDateTime(row.original.created_at)}</span>
+      ),
+    },
+    {
+      id: "updated",
+      accessorKey: "updated_at",
+      header: "Updated",
+      meta: { className: "hidden xl:table-cell" },
+      cell: ({ row }) => (
+        <span className="text-[13px] text-ink-muted">
+          {formatUpdatedAt(row.original.created_at, row.original.updated_at)}
+        </span>
       ),
     },
   ], []);

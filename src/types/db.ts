@@ -445,6 +445,7 @@ export type Database = {
           referer: string | null
           resume_path: string | null
           status: string
+          updated_at: string
           user_agent: string | null
         }
         Insert: {
@@ -461,6 +462,7 @@ export type Database = {
           referer?: string | null
           resume_path?: string | null
           status?: string
+          updated_at?: string
           user_agent?: string | null
         }
         Update: {
@@ -477,6 +479,7 @@ export type Database = {
           referer?: string | null
           resume_path?: string | null
           status?: string
+          updated_at?: string
           user_agent?: string | null
         }
         Relationships: []
@@ -502,6 +505,7 @@ export type Database = {
           referred_by_code: string | null
           referred_by_lead_id: string | null
           source: string | null
+          updated_at: string
           user_agent: string | null
           verification_token: string | null
           verified_at: string | null
@@ -526,6 +530,7 @@ export type Database = {
           referred_by_code?: string | null
           referred_by_lead_id?: string | null
           source?: string | null
+          updated_at?: string
           user_agent?: string | null
           verification_token?: string | null
           verified_at?: string | null
@@ -550,6 +555,7 @@ export type Database = {
           referred_by_code?: string | null
           referred_by_lead_id?: string | null
           source?: string | null
+          updated_at?: string
           user_agent?: string | null
           verification_token?: string | null
           verified_at?: string | null
@@ -692,6 +698,7 @@ export type Database = {
           phone: string | null
           referer: string | null
           status: string | null
+          updated_at: string
           user_agent: string | null
           user_id: string | null
           verification_token: string
@@ -709,6 +716,7 @@ export type Database = {
           phone?: string | null
           referer?: string | null
           status?: string | null
+          updated_at?: string
           user_agent?: string | null
           user_id?: string | null
           verification_token?: string
@@ -726,6 +734,7 @@ export type Database = {
           phone?: string | null
           referer?: string | null
           status?: string | null
+          updated_at?: string
           user_agent?: string | null
           user_id?: string | null
           verification_token?: string

@@ -8,6 +8,8 @@ export type Area = {
   slug: string;
   name: string;
   educator_id: string | null;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type PropertyType = {
