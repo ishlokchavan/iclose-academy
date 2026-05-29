@@ -80,11 +80,18 @@ export function MembersTree({
 
   // Split: trees with actual branches vs. solo roots (no referrals).
   // Solo roots get a compact chip grid below — saves a screenful of empty
-  // boxes once the platform has 100+ members. Partners-without-referrals are
-  // dropped entirely (they belong to the Partners admin, not this tree).
+  // boxes once the platform has 100+ members. Split into two buckets so the
+  // labels make sense: members who joined without a referrer ("Organic
+  // signups") and partners who haven't brought anyone yet ("No signups yet").
+  // /manage/members never receives partners-without-signups (its query filters
+  // them out), so emptyPartners is empty on that page and the section won't
+  // render — no UI change there.
   const networks = roots.filter((r) => r._children.length > 0);
-  const solos = roots.filter(
+  const organicMembers = roots.filter(
     (r) => r._children.length === 0 && r.kind !== "partner",
+  );
+  const emptyPartners = roots.filter(
+    (r) => r._children.length === 0 && r.kind === "partner",
   );
 
   return (
@@ -113,16 +120,32 @@ export function MembersTree({
         </section>
       ) : null}
 
-      {solos.length > 0 ? (
+      {emptyPartners.length > 0 ? (
+        <section>
+          <div className="mb-3 flex items-baseline justify-between">
+            <p className="eyebrow">No signups yet</p>
+            <p className="text-[11px] text-ink-muted">
+              {emptyPartners.length} partner{emptyPartners.length === 1 ? "" : "s"} with no referrals
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {emptyPartners.map((s) => (
+              <SoloChip key={s.id} node={s} onSelect={onSelect} selectedId={selectedId} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {organicMembers.length > 0 ? (
         <section>
           <div className="mb-3 flex items-baseline justify-between">
             <p className="eyebrow">Organic signups</p>
             <p className="text-[11px] text-ink-muted">
-              {solos.length} joined with no referrer
+              {organicMembers.length} joined with no referrer
             </p>
           </div>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {solos.map((s) => (
+            {organicMembers.map((s) => (
               <SoloChip key={s.id} node={s} onSelect={onSelect} selectedId={selectedId} />
             ))}
           </div>
@@ -307,6 +330,7 @@ function SoloChip({
   selectedId: string | null;
 }) {
   const selected = node.id === selectedId;
+  const isPartner = node.kind === "partner";
   const displayName = node.name?.trim() || node.email.split("@")[0] || node.email;
   return (
     <button
@@ -315,16 +339,27 @@ function SoloChip({
       className={cn(
         "group flex items-center gap-2.5 rounded-xl border bg-surface-raised px-3 py-2 text-left transition-colors",
         "hover:border-ink/25",
-        selected ? "border-accent ring-1 ring-accent/30" : "border-hairline",
+        selected
+          ? "border-accent ring-1 ring-accent/30"
+          : isPartner
+            ? "border-accent/40 bg-accent/[0.03]"
+            : "border-hairline",
       )}
     >
-      <div className="grid size-8 shrink-0 place-items-center rounded-full border border-hairline bg-surface-subtle text-[11px] font-semibold text-ink">
+      <div
+        className={cn(
+          "grid size-8 shrink-0 place-items-center rounded-full border text-[11px] font-semibold",
+          isPartner
+            ? "border-accent/40 bg-accent/10 text-accent"
+            : "border-hairline bg-surface-subtle text-ink",
+        )}
+      >
         {initials(node.name, node.email)}
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
           <p className="truncate text-[13px] font-medium text-ink">{displayName}</p>
-          {node.is_verified ? (
+          {node.is_verified && !isPartner ? (
             <Check className="size-3 shrink-0 text-emerald-600" aria-label="Verified" />
           ) : null}
         </div>
@@ -335,7 +370,11 @@ function SoloChip({
           {node.referral_code}
         </code>
       ) : null}
-      {node.intent ? (
+      {isPartner ? (
+        <span className="shrink-0 rounded-full bg-accent/15 px-1.5 text-[9.5px] font-semibold uppercase tracking-wider text-accent">
+          Partner
+        </span>
+      ) : node.intent ? (
         <span
           className={cn(
             "shrink-0 rounded-full border px-1.5 text-[9.5px] font-medium capitalize",

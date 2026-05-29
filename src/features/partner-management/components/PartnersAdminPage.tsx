@@ -211,7 +211,7 @@ export function PartnersAdminPage({
         ) : null}
         {view !== "table" ? (
           <p className="text-[12px] text-ink-muted">
-            {(treeNodes ?? []).filter((n) => n.kind === "partner").length} partner network
+            {(treeNodes ?? []).filter((n) => n.kind === "partner").length} partner
             {(treeNodes ?? []).filter((n) => n.kind === "partner").length === 1 ? "" : "s"} · click any node
           </p>
         ) : null}

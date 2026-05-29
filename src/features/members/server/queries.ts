@@ -468,10 +468,19 @@ export async function getNetworkTreeNodes(): Promise<TreeMember[]> {
  * any partner (direct or transitive). Used by /manage/partners tree view —
  * member-only networks belong on /manage/members, not here.
  */
+/**
+ * Subset of the unified network tree restricted to partner-rooted forests:
+ * every non-archived partner (with signups or without), plus every member
+ * reachable from any partner. Empty partners surface as solo roots so the
+ * tree view matches the table view's partner count — no partner disappears
+ * just because nobody's signed up through them yet.
+ *
+ * Member-only networks belong on /manage/members, not here.
+ */
 export async function getPartnerRootedTreeNodes(): Promise<TreeMember[]> {
   const all = await getNetworkTreeNodes();
 
-  // Children-by-parent-code index for one BFS over the forest.
+  // Children-by-parent-code index for one BFS over the unified graph.
   const childrenByCode = new Map<string, TreeMember[]>();
   for (const n of all) {
     if (n.referred_by_code) {
@@ -497,6 +506,34 @@ export async function getPartnerRootedTreeNodes(): Promise<TreeMember[]> {
       if (child.referral_code) queue.push(child.referral_code);
     }
   }
+  const result = all.filter((n) => kept.has(n.id));
 
-  return all.filter((n) => kept.has(n.id));
+  // Partners with no signups yet aren't in getNetworkTreeNodes (it filters
+  // to partners-with-referrals so /manage/members doesn't get cluttered).
+  // Backfill them as solo roots so the partner page is self-consistent.
+  const includedPartnerIds = new Set(
+    result.filter((n) => n.kind === "partner").map((n) => n.id),
+  );
+
+  const admin = createSupabaseAdminClient();
+  const { data: extraPartners } = await admin
+    .from("partners")
+    .select("id, name, email, code, status")
+    .neq("status", "archived");
+
+  const emptyPartners: TreeMember[] = (extraPartners ?? [])
+    .filter((p) => !includedPartnerIds.has(`partner:${p.id}`))
+    .map((p) => ({
+      id: `partner:${p.id}`,
+      name: p.name,
+      email: p.email,
+      referral_code: (p.code ?? "").toUpperCase(),
+      referred_by_code: null,
+      is_verified: true,
+      intent: null,
+      kind: "partner",
+      archived: false, // we filtered status != 'archived' above
+    }));
+
+  return [...result, ...emptyPartners];
 }
