@@ -1,23 +1,23 @@
 import { redirect } from "next/navigation";
 
+import { getSessionUser } from "@/lib/auth/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 import { SignOutButton } from "../sign-out-button";
-
 import { CopyReferralLink } from "./copy-referral-link";
 
 export default async function PartnerDashboardPage() {
+  const user = await getSessionUser();
+  if (!user) redirect("/partner/login");
+  if (user.role !== "partner") redirect("/partner/login");
+
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user || user.user_metadata?.role !== "partner") redirect("/partner/login");
 
   const { data: partner } = await supabase
     .from("partners")
     .select("*")
     .eq("user_id", user.id)
-    .single();
+    .maybeSingle();
 
   const { count: clicks } = partner
     ? await supabase
@@ -40,7 +40,7 @@ export default async function PartnerDashboardPage() {
       <div className="flex items-start justify-between mb-10">
         <div>
           <h1 className="text-3xl font-bold mb-2">Your Dashboard</h1>
-          <p className="text-gray-500">Welcome back, {partner?.name}</p>
+          <p className="text-gray-500">Welcome back, {partner?.name ?? user.email}</p>
         </div>
         <SignOutButton />
       </div>
@@ -60,10 +60,16 @@ export default async function PartnerDashboardPage() {
         </div>
       </div>
 
-      <div className="border rounded-xl p-6">
-        <p className="text-sm text-gray-500 mb-2">Your Referral Link</p>
-        <CopyReferralLink link={link} />
-      </div>
+      {partner ? (
+        <div className="border rounded-xl p-6">
+          <p className="text-sm text-gray-500 mb-2">Your Referral Link</p>
+          <CopyReferralLink link={link} />
+        </div>
+      ) : (
+        <div className="border rounded-xl p-6 text-sm text-gray-500">
+          No partner record linked to your account yet. Contact an admin to finish onboarding.
+        </div>
+      )}
     </main>
   );
 }

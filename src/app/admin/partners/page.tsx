@@ -1,16 +1,16 @@
 import { redirect } from "next/navigation";
 
+import { getSessionUser } from "@/lib/auth/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 import { SignOutButton } from "../../partner/sign-out-button";
 
 export default async function AdminPartnersPage() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user || user.user_metadata?.role !== "admin") redirect("/partner/login");
+  const user = await getSessionUser();
+  if (!user) redirect("/partner/login");
+  if (user.role !== "admin" && user.role !== "manager") redirect("/partner/login");
 
+  const supabase = await createSupabaseServerClient();
   const { data: partners } = await supabase
     .from("partners")
     .select("*")

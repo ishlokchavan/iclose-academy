@@ -134,6 +134,8 @@ export function navForRole(role: AppRole): NavSection[] {
     case "manager":
     case "educator":
       return MANAGER_NAV;
+    case "partner":
+      return [];
   }
 }
 
@@ -142,6 +144,7 @@ export const ROLE_LANDING: Record<AppRole, string> = {
   educator: "/manage",  // legacy — redirect to manager area
   manager:  "/manage",
   admin:    "/manage",
+  partner:  "/partner/dashboard",
 };
 
 export const ROLE_LABEL: Record<AppRole, { label: string; icon: LucideIcon }> = {
@@ -149,4 +152,5 @@ export const ROLE_LABEL: Record<AppRole, { label: string; icon: LucideIcon }> = 
   educator: { label: "Educator", icon: Users },  // legacy
   manager:  { label: "Manager",  icon: ShieldCheck },
   admin:    { label: "Admin",    icon: ShieldCheck },
+  partner:  { label: "Partner",  icon: Users },
 };

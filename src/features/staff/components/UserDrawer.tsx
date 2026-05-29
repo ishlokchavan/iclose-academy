@@ -40,6 +40,7 @@ const ROLE_LABEL: Record<AppRole, string> = {
   manager: "Manager",
   admin: "Admin",
   educator: "Educator",
+  partner: "Partner",
 };
 
 export function UserDrawer({

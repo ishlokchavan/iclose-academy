@@ -682,33 +682,54 @@ export type Database = {
       partners: {
         Row: {
           code: string
+          consent_marketing: boolean
+          consented_at: string | null
           created_at: string | null
           email: string
           id: string
+          is_verified: boolean
           name: string
           phone: string | null
+          referer: string | null
           status: string | null
+          user_agent: string | null
           user_id: string | null
+          verification_token: string
+          verified_at: string | null
         }
         Insert: {
           code: string
+          consent_marketing?: boolean
+          consented_at?: string | null
           created_at?: string | null
           email: string
           id?: string
+          is_verified?: boolean
           name: string
           phone?: string | null
+          referer?: string | null
           status?: string | null
+          user_agent?: string | null
           user_id?: string | null
+          verification_token?: string
+          verified_at?: string | null
         }
         Update: {
           code?: string
+          consent_marketing?: boolean
+          consented_at?: string | null
           created_at?: string | null
           email?: string
           id?: string
+          is_verified?: boolean
           name?: string
           phone?: string | null
+          referer?: string | null
           status?: string | null
+          user_agent?: string | null
           user_id?: string | null
+          verification_token?: string
+          verified_at?: string | null
         }
         Relationships: [
           {
@@ -1347,7 +1368,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "learner" | "educator" | "manager" | "admin"
+      app_role: "learner" | "educator" | "manager" | "admin" | "partner"
       inquiry_status: "open" | "assigned" | "in_progress" | "closed"
       topic_status: "draft" | "in_review" | "published" | "archived"
     }
@@ -1477,7 +1498,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["learner", "educator", "manager", "admin"],
+      app_role: ["learner", "educator", "manager", "admin", "partner"],
       inquiry_status: ["open", "assigned", "in_progress", "closed"],
       topic_status: ["draft", "in_review", "published", "archived"],
     },

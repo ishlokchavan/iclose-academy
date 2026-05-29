@@ -13,6 +13,7 @@ export async function requireUser(): Promise<SessionUser> {
 const ROLE_RANK: Record<AppRole, number> = {
   learner:  0,
   educator: 1, // legacy — kept in DB enum, no active users
+  partner:  1, // external, sibling rank to learner — gated to /partner/* only
   manager:  2,
   admin:    3,
 };
