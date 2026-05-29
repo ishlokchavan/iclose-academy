@@ -9,6 +9,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { EmailLink, TelLink } from "@/components/patterns/ContactLink";
 import {
   deletePartnerAction,
+  sendPartnerInviteAction,
   setPartnerStatusAction,
   updatePartnerAction,
 } from "@/features/partner-management/server/actions";
@@ -53,6 +54,7 @@ export function PartnerAdminDrawer({
   const [mode, setMode] = useState<Mode>("view");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [inviteStatus, setInviteStatus] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", phone: "", code: "", status: "active" as "active" | "inactive" });
 
   // Reset to view-mode whenever a new partner is opened.
@@ -60,6 +62,7 @@ export function PartnerAdminDrawer({
     if (partner) {
       setMode("view");
       setError(null);
+      setInviteStatus(null);
       setForm({
         name:   partner.name,
         phone:  partner.phone ?? "",
@@ -94,6 +97,17 @@ export function PartnerAdminDrawer({
     startTransition(async () => {
       const result = await setPartnerStatusAction(partner.id, next);
       if (result.error) setError(result.error);
+    });
+  }
+
+  function handleSendInvite() {
+    if (!partner) return;
+    setError(null);
+    setInviteStatus(null);
+    startTransition(async () => {
+      const result = await sendPartnerInviteAction(partner.id);
+      if (result.error) { setError(result.error); return; }
+      setInviteStatus(`Invite sent to ${partner.email}.`);
     });
   }
 
@@ -163,9 +177,15 @@ export function PartnerAdminDrawer({
                 {error ? (
                   <p className="text-[13px] text-destructive" role="alert">{error}</p>
                 ) : null}
+                {inviteStatus ? (
+                  <p className="text-[13px] text-emerald-600">{inviteStatus}</p>
+                ) : null}
 
                 <div className="flex flex-wrap gap-2">
                   <Button onClick={() => setMode("edit")}>Edit</Button>
+                  <Button variant="secondary" onClick={handleSendInvite} disabled={isPending}>
+                    {partner.user_id && partner.is_verified ? "Resend invite" : "Send invite"}
+                  </Button>
                   <Button variant="secondary" onClick={handleToggleStatus} disabled={isPending}>
                     {partner.status === "inactive" ? "Activate" : "Deactivate"}
                   </Button>

@@ -1,8 +1,11 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+
 import { revalidatePath } from "next/cache";
 
 import { requireMinRole } from "@/lib/auth/guards";
+import { sendPartnerInviteEmail } from "@/lib/email/send-partner-invite-email";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   createPartnerSchema,
@@ -114,6 +117,89 @@ export async function setPartnerStatusAction(
 
   revalidatePath("/manage/partners");
   return { id };
+}
+
+/**
+ * Send (or resend) a partner invite. Mints our own UUID token stored in
+ * partners.verification_token (NOT a Supabase invite token), sends the link
+ * via Gmail SMTP (NOT Supabase's email), and creates the auth.users row if
+ * one doesn't exist yet. Setting the password happens on /partner/accept-invite.
+ */
+export async function sendPartnerInviteAction(
+  partnerId: string,
+): Promise<PartnerActionResult> {
+  await requireMinRole("manager");
+  const admin = createSupabaseAdminClient();
+
+  const { data: partner, error: partnerError } = await admin
+    .from("partners")
+    .select("id, name, email, user_id")
+    .eq("id", partnerId)
+    .maybeSingle();
+  if (partnerError || !partner) return { error: "Partner not found." };
+
+  // Ensure an auth.users row exists for this email so the password set
+  // on /partner/accept-invite has somewhere to land.
+  let userId = partner.user_id;
+  if (!userId) {
+    const { data: existingId } = await admin.rpc("get_auth_user_id_by_email", {
+      p_email: partner.email,
+    });
+    if (typeof existingId === "string" && existingId.length > 0) {
+      userId = existingId;
+    } else {
+      // Random password the user never sees — they'll set their own via
+      // the invite link. email_confirm=true so they can sign in straight
+      // after setting the password, no Supabase confirmation email.
+      const seedPassword = randomUUID() + randomUUID();
+      const { data: created, error: createError } = await admin.auth.admin.createUser({
+        email: partner.email,
+        password: seedPassword,
+        email_confirm: true,
+        app_metadata: { role: "partner", provider: "email", providers: ["email"] },
+        user_metadata: { full_name: partner.name },
+      });
+      if (createError || !created?.user) {
+        return { error: createError?.message ?? "Could not create auth user." };
+      }
+      userId = created.user.id;
+    }
+
+    // Link the partner row to the auth user.
+    const { error: linkError } = await admin
+      .from("partners")
+      .update({ user_id: userId })
+      .eq("id", partner.id);
+    if (linkError) return { error: linkError.message };
+  }
+
+  // Make sure the profiles row exists with role=partner so the rest of the
+  // app's role plumbing (ROLE_LANDING, guards) treats them correctly.
+  await admin.from("profiles").upsert(
+    { id: userId, role: "partner", full_name: partner.name, email: partner.email },
+    { onConflict: "id" },
+  );
+
+  // Mint a fresh invite token. Reset is_verified so the partner has to
+  // accept the new invite (also invalidates any prior token for them).
+  const token = randomUUID();
+  const { error: tokenError } = await admin
+    .from("partners")
+    .update({ verification_token: token, is_verified: false, verified_at: null })
+    .eq("id", partner.id);
+  if (tokenError) return { error: tokenError.message };
+
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const link = `${baseUrl}/partner/accept-invite?token=${encodeURIComponent(token)}&email=${encodeURIComponent(partner.email)}`;
+
+  try {
+    await sendPartnerInviteEmail(partner.email, partner.name, link);
+  } catch {
+    return { error: "Could not send the invite email. Please try again." };
+  }
+
+  revalidatePath("/manage/partners");
+  return { id: partner.id };
 }
 
 export async function deletePartnerAction(
