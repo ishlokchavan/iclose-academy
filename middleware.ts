@@ -24,11 +24,19 @@ export async function middleware(request: NextRequest) {
   const rawRef = searchParams.get(REF_QUERY_PARAM) ?? searchParams.get("partner");
   const refCode = normalizeCode(rawRef);
   if (refCode) {
+    // Share attribution across the whole iclose.ae family (marketing apex +
+    // academy subdomain are separate apps/repos but one cookie domain). Set
+    // NEXT_PUBLIC_COOKIE_DOMAIN=.iclose.ae in production; leave it unset on
+    // localhost so the cookie stays host-scoped. The marketing repo MUST use
+    // the same cookie name + domain for a click there to be readable here.
+    const cookieDomain = process.env.NEXT_PUBLIC_COOKIE_DOMAIN || undefined;
+
     response.cookies.set(REF_COOKIE, refCode, {
       maxAge: REF_COOKIE_MAX_AGE,
       httpOnly: false,
       sameSite: "lax",
       path: "/",
+      domain: cookieDomain,
     });
 
     let visitorId = request.cookies.get(VISITOR_COOKIE)?.value;
@@ -39,6 +47,7 @@ export async function middleware(request: NextRequest) {
         httpOnly: false,
         sameSite: "lax",
         path: "/",
+        domain: cookieDomain,
       });
     }
 
