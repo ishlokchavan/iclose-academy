@@ -232,13 +232,15 @@ export async function sendPartnerInviteAction(
 }
 
 /**
- * Sum of all activity tied to a partner, so we can decide whether they're
- * archivable-only or also safely hard-deletable.
+ * Activity buckets for a partner. We split out clicks because they're not
+ * an attribution outcome on their own — if nobody signed up, the clicks are
+ * just failed marketing with no record worth preserving, and we can wipe
+ * them safely at delete time.
  */
 async function getPartnerActivity(
   admin: ReturnType<typeof createSupabaseAdminClient>,
   partner: { id: string; code: string },
-): Promise<{ clicks: number; signups: number; conversions: number; commissions: number; total: number }> {
+): Promise<{ clicks: number; signups: number; conversions: number; commissions: number; blocking: number }> {
   const upper = partner.code.toUpperCase();
   const [clicks, signups, conversions, commissions] = await Promise.all([
     admin.from("referral_clicks").select("id", { count: "exact", head: true }).ilike("code", upper),
@@ -247,7 +249,9 @@ async function getPartnerActivity(
     admin.from("commissions").select("id", { count: "exact", head: true }).eq("partner_id", partner.id),
   ]);
   const c = clicks.count ?? 0, s = signups.count ?? 0, cv = conversions.count ?? 0, cm = commissions.count ?? 0;
-  return { clicks: c, signups: s, conversions: cv, commissions: cm, total: c + s + cv + cm };
+  // "blocking" = anything that would orphan real attribution if we deleted.
+  // Clicks alone don't qualify — they're noise, not history.
+  return { clicks: c, signups: s, conversions: cv, commissions: cm, blocking: s + cv + cm };
 }
 
 /**
@@ -299,12 +303,15 @@ export async function archivePartnerAction(
 }
 
 /**
- * Hard-delete — only safe when the partner has no graph footprint
- * (clicks/signups/conversions/commissions all zero). Use this to undo
- * accidental partner creation. Any partner with real activity must be
- * archived instead, otherwise their referred members would orphan and
- * their code could be reused by a new partner — silently rewriting past
- * attribution.
+ * Hard-delete — allowed when the partner has zero signups, zero referral
+ * conversions, and zero commissions. Clicks alone don't block: with no
+ * conversion they're failed marketing, not history worth preserving. We
+ * wipe the orphaned click rows alongside the partner so the code can be
+ * safely reused later without inheriting someone else's traffic.
+ *
+ * Use this to undo accidental partner creation or to clean up a partner
+ * who never managed to convert anyone. Anything with real attribution must
+ * be archived instead.
  */
 export async function deletePartnerAction(
   id: string,
@@ -320,17 +327,23 @@ export async function deletePartnerAction(
   if (lookupError || !partner) return { error: "Partner not found." };
 
   const activity = await getPartnerActivity(admin, partner);
-  if (activity.total > 0) {
+  if (activity.blocking > 0) {
     return {
       error:
-        `Can't delete — this partner has ${activity.signups} signup(s), ${activity.clicks} click(s). ` +
+        `Can't delete — this partner has ${activity.signups} signup(s). ` +
         `Archive them instead to preserve attribution.`,
     };
   }
 
-  // Safe to fully tear down: zero referrals/clicks means nothing in the
-  // graph points at this partner. Clean up the auth user too so we don't
-  // leave a dangling account with role=partner.
+  // Safe to fully tear down: no signups, no conversions, no commissions —
+  // nothing valuable points at this partner. Wipe orphaned clicks (matched
+  // on code, case-insensitive) and the auth account too so the code can
+  // be reused without dragging old data into the new partner's stats.
+  await admin
+    .from("referral_clicks")
+    .delete()
+    .ilike("code", partner.code.toUpperCase());
+
   if (partner.user_id) {
     await admin.auth.admin.deleteUser(partner.user_id).catch(() => {});
     // profiles cascades from auth.users in standard Supabase setups; if

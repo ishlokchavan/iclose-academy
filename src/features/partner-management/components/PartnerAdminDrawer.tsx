@@ -160,9 +160,13 @@ export function PartnerAdminDrawer({
 
   function handleDelete() {
     if (!partner) return;
+    const clickNote =
+      partner.clicks > 0
+        ? ` Their ${partner.clicks} click(s) will also be wiped — there were no signups, so nothing was attributed.`
+        : "";
     const confirmed = window.confirm(
-      `Delete "${partner.name}" permanently? Only allowed because they have no clicks or signups. ` +
-      `This removes the partner row, their auth account, and frees the code for reuse.`,
+      `Delete "${partner.name}" permanently? Only allowed because they have no signups.${clickNote} ` +
+      `This removes the partner row, their auth account, and frees the code "${partner.code}" for reuse.`,
     );
     if (!confirmed) return;
     setError(null);
@@ -295,13 +299,17 @@ export function PartnerAdminDrawer({
                     </span>
                   )}
                   {canDelete && partner.status !== "archived" ? (
-                    partner.clicks === 0 && partner.signups === 0 ? (
+                    partner.signups === 0 ? (
                       <Button
                         variant="secondary"
                         onClick={handleDelete}
                         disabled={isPending}
                         className="text-destructive hover:bg-destructive/5"
-                        title="Hard delete is allowed because the partner has no activity yet"
+                        title={
+                          partner.clicks > 0
+                            ? "Hard delete is allowed — no signups means no attribution to preserve. Clicks will be wiped too."
+                            : "Hard delete is allowed because the partner has no activity yet."
+                        }
                       >
                         Delete
                       </Button>
