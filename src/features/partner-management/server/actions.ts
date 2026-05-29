@@ -231,16 +231,112 @@ export async function sendPartnerInviteAction(
   return { id: partner.id };
 }
 
-export async function deletePartnerAction(
+/**
+ * Sum of all activity tied to a partner, so we can decide whether they're
+ * archivable-only or also safely hard-deletable.
+ */
+async function getPartnerActivity(
+  admin: ReturnType<typeof createSupabaseAdminClient>,
+  partner: { id: string; code: string },
+): Promise<{ clicks: number; signups: number; conversions: number; commissions: number; total: number }> {
+  const upper = partner.code.toUpperCase();
+  const [clicks, signups, conversions, commissions] = await Promise.all([
+    admin.from("referral_clicks").select("id", { count: "exact", head: true }).ilike("code", upper),
+    admin.from("leads").select("id", { count: "exact", head: true }).ilike("referred_by_code", upper),
+    admin.from("referral_conversions").select("id", { count: "exact", head: true }).eq("partner_id", partner.id),
+    admin.from("commissions").select("id", { count: "exact", head: true }).eq("partner_id", partner.id),
+  ]);
+  const c = clicks.count ?? 0, s = signups.count ?? 0, cv = conversions.count ?? 0, cm = commissions.count ?? 0;
+  return { clicks: c, signups: s, conversions: cv, commissions: cm, total: c + s + cv + cm };
+}
+
+/**
+ * Archive a partner — the correct way to "stop using" any partner with
+ * activity. Preserves historical attribution and the code reservation so
+ * past referrals keep resolving and the code can't be reused by mistake.
+ *
+ * Does NOT scrub PII (that's a separate GDPR/forget-me concern). The data
+ * stays on the row; the entity just goes inert: status=archived, auth user
+ * banned, profile role demoted so the partner can no longer log in.
+ */
+export async function archivePartnerAction(
   id: string,
 ): Promise<PartnerActionResult> {
-  // Restrict deletion to admin only — soft delete via status is safer for managers.
   await requireMinRole("admin");
   const admin = createSupabaseAdminClient();
 
-  // referral_conversions / commissions FK with no cascade — clear them first.
-  await admin.from("referral_conversions").delete().eq("partner_id", id);
-  await admin.from("commissions").delete().eq("partner_id", id);
+  const { data: partner, error: lookupError } = await admin
+    .from("partners")
+    .select("id, user_id, code, status")
+    .eq("id", id)
+    .maybeSingle();
+  if (lookupError || !partner) return { error: "Partner not found." };
+
+  if (partner.user_id) {
+    // Ban the auth user — long-duration ban is the standard Supabase pattern
+    // for "this account can't sign in anymore". Failure here isn't fatal:
+    // we still mark the row archived so the operational state is consistent.
+    await admin.auth.admin
+      .updateUserById(partner.user_id, { ban_duration: "876000h" })
+      .catch(() => {});
+    // Demote the profile so the role plumbing (ROLE_LANDING, role guards)
+    // stops treating them as a partner.
+    await admin
+      .from("profiles")
+      .update({ role: "learner" })
+      .eq("id", partner.user_id);
+  }
+
+  const { error: updateError } = await admin
+    .from("partners")
+    .update({ status: "archived" })
+    .eq("id", id);
+  if (updateError) return { error: updateError.message };
+
+  revalidatePath("/manage/partners");
+  revalidatePath("/manage/members");
+  return { id };
+}
+
+/**
+ * Hard-delete — only safe when the partner has no graph footprint
+ * (clicks/signups/conversions/commissions all zero). Use this to undo
+ * accidental partner creation. Any partner with real activity must be
+ * archived instead, otherwise their referred members would orphan and
+ * their code could be reused by a new partner — silently rewriting past
+ * attribution.
+ */
+export async function deletePartnerAction(
+  id: string,
+): Promise<PartnerActionResult> {
+  await requireMinRole("admin");
+  const admin = createSupabaseAdminClient();
+
+  const { data: partner, error: lookupError } = await admin
+    .from("partners")
+    .select("id, user_id, code")
+    .eq("id", id)
+    .maybeSingle();
+  if (lookupError || !partner) return { error: "Partner not found." };
+
+  const activity = await getPartnerActivity(admin, partner);
+  if (activity.total > 0) {
+    return {
+      error:
+        `Can't delete — this partner has ${activity.signups} signup(s), ${activity.clicks} click(s). ` +
+        `Archive them instead to preserve attribution.`,
+    };
+  }
+
+  // Safe to fully tear down: zero referrals/clicks means nothing in the
+  // graph points at this partner. Clean up the auth user too so we don't
+  // leave a dangling account with role=partner.
+  if (partner.user_id) {
+    await admin.auth.admin.deleteUser(partner.user_id).catch(() => {});
+    // profiles cascades from auth.users in standard Supabase setups; if
+    // not, this no-ops harmlessly.
+    await admin.from("profiles").delete().eq("id", partner.user_id);
+  }
 
   const { error } = await admin.from("partners").delete().eq("id", id);
   if (error) return { error: error.message };

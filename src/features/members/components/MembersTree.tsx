@@ -223,6 +223,7 @@ function NodeCard({
   const selected = node.id === selectedId;
   const displayName = node.name?.trim() || node.email.split("@")[0] || node.email;
   const isPartner = node.kind === "partner";
+  const isArchived = isPartner && node.archived === true;
 
   return (
     <button
@@ -232,7 +233,8 @@ function NodeCard({
         "group relative inline-flex w-[240px] shrink-0 items-center gap-2.5 rounded-xl border bg-surface px-3 py-2.5 text-left transition-all",
         "hover:-translate-y-0.5 hover:border-ink/25 hover:shadow-card-hover",
         selected && "border-accent shadow-card-hover ring-1 ring-accent/30",
-        !selected && isPartner && "border-accent/50 bg-accent/[0.03] shadow-card",
+        !selected && isArchived && "border-amber-300/60 bg-amber-50/40 opacity-80 shadow-card",
+        !selected && isPartner && !isArchived && "border-accent/50 bg-accent/[0.03] shadow-card",
         !selected && !isPartner && isRoot && "border-ink/20 shadow-card",
         !selected && !isPartner && !isRoot && "border-hairline",
       )}
@@ -240,9 +242,11 @@ function NodeCard({
       <div
         className={cn(
           "grid size-9 shrink-0 place-items-center rounded-full border text-[12px] font-semibold",
-          isPartner
-            ? "border-accent/40 bg-accent/10 text-accent"
-            : "border-hairline bg-surface-subtle text-ink",
+          isArchived
+            ? "border-amber-300/60 bg-amber-100/60 text-amber-800"
+            : isPartner
+              ? "border-accent/40 bg-accent/10 text-accent"
+              : "border-hairline bg-surface-subtle text-ink",
         )}
       >
         {initials(node.name, node.email)}
@@ -276,12 +280,14 @@ function NodeCard({
         <span
           className={cn(
             "rounded-full px-1.5 text-[9.5px] font-semibold uppercase tracking-wider",
-            isPartner
-              ? "bg-accent/15 text-accent"
-              : "bg-ink/5 text-ink-muted font-medium",
+            isArchived
+              ? "bg-amber-100 text-amber-800"
+              : isPartner
+                ? "bg-accent/15 text-accent"
+                : "bg-ink/5 text-ink-muted font-medium",
           )}
         >
-          {isPartner ? "Partner" : isRoot ? "Root" : `T${node._depth}`}
+          {isArchived ? "Archived" : isPartner ? "Partner" : isRoot ? "Root" : `T${node._depth}`}
         </span>
         {childCount > 0 ? (
           <span className="rounded-full bg-accent/10 px-1.5 text-[10px] font-semibold tabular-nums text-accent">

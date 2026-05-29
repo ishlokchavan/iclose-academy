@@ -168,9 +168,15 @@ export function MembersPage({
               {name ?? <code className="font-mono text-[12px] text-ink-muted">{m.referred_by_code}</code>}
             </span>
             {kind === "partner" ? (
-              <span className="shrink-0 rounded-full border border-accent/30 bg-accent/10 px-1.5 py-0 text-[9.5px] font-semibold uppercase tracking-wider text-accent">
-                Partner
-              </span>
+              m.referred_by_archived ? (
+                <span className="shrink-0 rounded-full border border-amber-300/60 bg-amber-50 px-1.5 py-0 text-[9.5px] font-semibold uppercase tracking-wider text-amber-700">
+                  Partner · Archived
+                </span>
+              ) : (
+                <span className="shrink-0 rounded-full border border-accent/30 bg-accent/10 px-1.5 py-0 text-[9.5px] font-semibold uppercase tracking-wider text-accent">
+                  Partner
+                </span>
+              )
             ) : kind === "member" ? (
               <span className="shrink-0 rounded-full border border-hairline bg-surface-subtle px-1.5 py-0 text-[9.5px] font-semibold uppercase tracking-wider text-ink-muted">
                 Member

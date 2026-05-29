@@ -32,6 +32,8 @@ export type MemberRow = {
   /** Resolved referrer for table display. Null if organic or unresolvable. */
   referred_by_name: string | null;
   referred_by_kind: "member" | "partner" | null;
+  /** True if referred_by_kind is "partner" and the partner is archived. */
+  referred_by_archived: boolean;
 };
 
 // Kept as one literal string so Supabase's generated typings can narrow
@@ -57,7 +59,9 @@ export type TreeNode = {
  *
  * `kind` lets a partner appear as a root in the same forest as members — they
  * sit on top of their member networks, so partner-referred members no longer
- * fall into the "Independent" bucket.
+ * fall into the "Independent" bucket. `archived` dims the partner node and
+ * swaps its pill so historical attribution stays visible without making them
+ * look operationally live.
  */
 export type TreeMember = {
   id: string;
@@ -68,6 +72,7 @@ export type TreeMember = {
   is_verified: boolean;
   intent: string | null;
   kind?: "member" | "partner";
+  archived?: boolean;
 };
 
 export type AncestorNode = {
@@ -145,7 +150,7 @@ export async function getAllMembers(): Promise<MemberRow[]> {
       .select(LEAD_FIELDS)
       .order("referral_count", { ascending: false })
       .order("created_at", { ascending: false }),
-    admin.from("partners").select("id, name, email, code"),
+    admin.from("partners").select("id, name, email, code, status"),
   ]);
 
   if (error || !leads) return [];
@@ -153,13 +158,14 @@ export async function getAllMembers(): Promise<MemberRow[]> {
   // Build a code → (kind, name) map for resolving each member's referrer
   // ("Referred by" column). Codes are canonical-uppercase; we compare with
   // upper() so legacy lowercase partner codes still match.
-  type ReferrerInfo = { name: string; kind: "member" | "partner" };
+  type ReferrerInfo = { name: string; kind: "member" | "partner"; archived: boolean };
   const referrerByCode = new Map<string, ReferrerInfo>();
   for (const l of leads) {
     if (l.referral_code) {
       referrerByCode.set(l.referral_code.toUpperCase(), {
         name: l.name || l.email,
         kind: "member",
+        archived: false,
       });
     }
   }
@@ -167,7 +173,11 @@ export async function getAllMembers(): Promise<MemberRow[]> {
   for (const p of partners ?? []) {
     const key = (p.code ?? "").toUpperCase();
     if (key && !referrerByCode.has(key)) {
-      referrerByCode.set(key, { name: p.name || p.email, kind: "partner" });
+      referrerByCode.set(key, {
+        name: p.name || p.email,
+        kind: "partner",
+        archived: p.status === "archived",
+      });
     }
   }
 
@@ -244,6 +254,7 @@ export async function getAllMembers(): Promise<MemberRow[]> {
       network_size: networkSize(l.referral_code),
       referred_by_name: referrer?.name ?? null,
       referred_by_kind: referrer?.kind ?? null,
+      referred_by_archived: referrer?.archived ?? false,
     };
   });
 }
@@ -342,6 +353,9 @@ export async function getMemberById(leadId: string): Promise<MemberDetail | null
       network_size: descendants.length,
       referred_by_name: ancestors[0]?.name ?? null,
       referred_by_kind: ancestors[0]?.kind ?? null,
+      // Drawer doesn't render this flag today; default to false to satisfy
+      // the MemberRow shape without an extra DB hop in this path.
+      referred_by_archived: false,
     },
     directReferralCount: forest.length,
     totalDownstreamCount: descendants.length,
@@ -401,7 +415,7 @@ export async function getNetworkTreeNodes(): Promise<TreeMember[]> {
     admin
       .from("leads")
       .select("id, name, email, referral_code, referred_by_code, is_verified, intent"),
-    admin.from("partners").select("id, name, email, code"),
+    admin.from("partners").select("id, name, email, code, status"),
   ]);
 
   const memberNodes: TreeMember[] = (leads ?? []).map((l) => ({
@@ -434,6 +448,7 @@ export async function getNetworkTreeNodes(): Promise<TreeMember[]> {
       is_verified: true,
       intent: null,
       kind: "partner",
+      archived: p.status === "archived",
     }));
 
   // Normalize member nodes' codes to uppercase so partner-root matching works

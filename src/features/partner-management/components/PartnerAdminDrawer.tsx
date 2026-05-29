@@ -11,6 +11,7 @@ import { EmailLink, TelLink } from "@/components/patterns/ContactLink";
 import { MembersTree } from "@/features/members/components/MembersTree";
 import { PartnerShareLink } from "@/features/partner-management/components/PartnerShareLink";
 import {
+  archivePartnerAction,
   deletePartnerAction,
   loadPartnerReferralsAction,
   sendPartnerInviteAction,
@@ -141,12 +142,30 @@ export function PartnerAdminDrawer({
     });
   }
 
+  function handleArchive() {
+    if (!partner) return;
+    const confirmed = window.confirm(
+      `Archive "${partner.name}"? They lose access and their referral link stops being shared. ` +
+      `Their ${partner.signups} signup(s) and ${partner.clicks} click(s) stay credited to them ` +
+      `and the code "${partner.code}" stays reserved so it can never be reused.`,
+    );
+    if (!confirmed) return;
+    setError(null);
+    startTransition(async () => {
+      const result = await archivePartnerAction(partner.id);
+      if (result.error) { setError(result.error); return; }
+      onClose();
+    });
+  }
+
   function handleDelete() {
     if (!partner) return;
     const confirmed = window.confirm(
-      `Delete partner "${partner.name}"? This removes their conversions and commissions too. This cannot be undone.`,
+      `Delete "${partner.name}" permanently? Only allowed because they have no clicks or signups. ` +
+      `This removes the partner row, their auth account, and frees the code for reuse.`,
     );
     if (!confirmed) return;
+    setError(null);
     startTransition(async () => {
       const result = await deletePartnerAction(partner.id);
       if (result.error) { setError(result.error); return; }
@@ -260,22 +279,42 @@ export function PartnerAdminDrawer({
                 ) : null}
 
                 <div className="flex flex-wrap gap-2">
-                  <Button onClick={() => setMode("edit")}>Edit</Button>
-                  <Button variant="secondary" onClick={handleSendInvite} disabled={isPending}>
-                    {partner.user_id && partner.is_verified ? "Resend invite" : "Send invite"}
-                  </Button>
-                  <Button variant="secondary" onClick={handleToggleStatus} disabled={isPending}>
-                    {partner.status === "inactive" ? "Activate" : "Deactivate"}
-                  </Button>
-                  {canDelete ? (
-                    <Button
-                      variant="secondary"
-                      onClick={handleDelete}
-                      disabled={isPending}
-                      className="text-destructive hover:bg-destructive/5"
-                    >
-                      Delete
-                    </Button>
+                  {partner.status !== "archived" ? (
+                    <>
+                      <Button onClick={() => setMode("edit")}>Edit</Button>
+                      <Button variant="secondary" onClick={handleSendInvite} disabled={isPending}>
+                        {partner.user_id && partner.is_verified ? "Resend invite" : "Send invite"}
+                      </Button>
+                      <Button variant="secondary" onClick={handleToggleStatus} disabled={isPending}>
+                        {partner.status === "inactive" ? "Activate" : "Deactivate"}
+                      </Button>
+                    </>
+                  ) : (
+                    <span className="text-[12px] text-ink-muted">
+                      This partner is archived — read-only, attribution preserved.
+                    </span>
+                  )}
+                  {canDelete && partner.status !== "archived" ? (
+                    partner.clicks === 0 && partner.signups === 0 ? (
+                      <Button
+                        variant="secondary"
+                        onClick={handleDelete}
+                        disabled={isPending}
+                        className="text-destructive hover:bg-destructive/5"
+                        title="Hard delete is allowed because the partner has no activity yet"
+                      >
+                        Delete
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="secondary"
+                        onClick={handleArchive}
+                        disabled={isPending}
+                        className="text-destructive hover:bg-destructive/5"
+                      >
+                        Archive
+                      </Button>
+                    )
                   ) : null}
                 </div>
               </>
@@ -329,21 +368,17 @@ export function PartnerAdminDrawer({
 }
 
 function StatusPill({ value }: { value: string | null }) {
-  const active = value !== "inactive";
+  const state =
+    value === "archived" ? "archived" : value === "inactive" ? "inactive" : "active";
+  const styles = {
+    active:   { bg: "bg-emerald-50 text-emerald-700", dot: "bg-emerald-500", label: "Active" },
+    inactive: { bg: "bg-zinc-100 text-zinc-600",      dot: "bg-zinc-400",    label: "Inactive" },
+    archived: { bg: "bg-amber-50 text-amber-700",     dot: "bg-amber-500",   label: "Archived" },
+  }[state];
   return (
-    <span
-      className={[
-        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium",
-        active ? "bg-emerald-50 text-emerald-700" : "bg-zinc-100 text-zinc-600",
-      ].join(" ")}
-    >
-      <span
-        className={[
-          "size-1.5 rounded-full",
-          active ? "bg-emerald-500" : "bg-zinc-400",
-        ].join(" ")}
-      />
-      {active ? "Active" : "Inactive"}
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${styles.bg}`}>
+      <span className={`size-1.5 rounded-full ${styles.dot}`} />
+      {styles.label}
     </span>
   );
 }

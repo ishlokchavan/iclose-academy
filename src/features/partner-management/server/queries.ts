@@ -90,11 +90,17 @@ export async function getAllPartners(): Promise<PartnerAdminRow[]> {
   });
 }
 
+/**
+ * Operational counts exclude archived partners — they exist only as
+ * historical tombstones for attribution. Clicks/signups still tally them
+ * (the history happened, it should still count toward growth totals).
+ */
 export async function getPartnersOverview(): Promise<PartnersOverview> {
   const partners = await getAllPartners();
+  const live = partners.filter((p) => p.status !== "archived");
   return {
-    totalPartners: partners.length,
-    totalActive: partners.filter((p) => p.status !== "inactive").length,
+    totalPartners: live.length,
+    totalActive: live.filter((p) => p.status !== "inactive").length,
     totalClicks: partners.reduce((sum, p) => sum + p.clicks, 0),
     totalSignups: partners.reduce((sum, p) => sum + p.signups, 0),
   };

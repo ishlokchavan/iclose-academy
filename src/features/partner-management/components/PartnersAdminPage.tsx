@@ -40,11 +40,17 @@ export function PartnersAdminPage({
   const [selected, setSelected] = useState<PartnerAdminRow | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [period, setPeriod] = useState<Period>("all");
+  const [showArchived, setShowArchived] = useState(false);
 
-  const visible = useMemo(
-    () => filterByPeriod(partners, (p) => p.created_at ?? new Date().toISOString(), period),
-    [partners, period],
-  );
+  const archivedCount = partners.filter((p) => p.status === "archived").length;
+  const visible = useMemo(() => {
+    const inPeriod = filterByPeriod(
+      partners,
+      (p) => p.created_at ?? new Date().toISOString(),
+      period,
+    );
+    return showArchived ? inPeriod : inPeriod.filter((p) => p.status !== "archived");
+  }, [partners, period, showArchived]);
 
   const columns = useMemo<ColumnDef<PartnerAdminRow, unknown>[]>(() => [
     {
@@ -118,16 +124,17 @@ export function PartnersAdminPage({
       enableColumnFilter: true,
       meta: { filter: "select" },
       cell: ({ row }) => {
-        const active = row.original.status !== "inactive";
+        const v = row.original.status;
+        const state = v === "archived" ? "archived" : v === "inactive" ? "inactive" : "active";
+        const styles = {
+          active:   { bg: "bg-emerald-50 text-emerald-700", dot: "bg-emerald-500", label: "Active" },
+          inactive: { bg: "bg-zinc-100 text-zinc-600",      dot: "bg-zinc-400",    label: "Inactive" },
+          archived: { bg: "bg-amber-50 text-amber-700",     dot: "bg-amber-500",   label: "Archived" },
+        }[state];
         return (
-          <span
-            className={[
-              "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium",
-              active ? "bg-emerald-50 text-emerald-700" : "bg-zinc-100 text-zinc-600",
-            ].join(" ")}
-          >
-            <span className={["size-1.5 rounded-full", active ? "bg-emerald-500" : "bg-zinc-400"].join(" ")} />
-            {active ? "Active" : "Inactive"}
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${styles.bg}`}>
+            <span className={`size-1.5 rounded-full ${styles.dot}`} />
+            {styles.label}
           </span>
         );
       },
@@ -162,6 +169,17 @@ export function PartnersAdminPage({
 
       <div className="flex items-center gap-2">
         <PeriodFilter value={period} onChange={setPeriod} />
+        {archivedCount > 0 ? (
+          <label className="ml-2 inline-flex items-center gap-1.5 text-[12px] text-ink-muted cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showArchived}
+              onChange={(e) => setShowArchived(e.target.checked)}
+              className="size-3.5 accent-ink"
+            />
+            Show archived ({archivedCount})
+          </label>
+        ) : null}
         <div className="ml-auto">
           <Button onClick={() => setAddOpen(true)}>
             <UserPlus className="size-4" />
