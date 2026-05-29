@@ -13,12 +13,48 @@ import {
   type CreatePartnerInput,
   type UpdatePartnerInput,
 } from "@/features/partner-management/schemas/partner";
+import {
+  getPartnerReferralTree,
+  type PartnerReferralTree,
+} from "@/features/partner-management/server/queries";
 
 export type PartnerActionResult = { error?: string; id?: string };
 
-function randomCode(prefix = "p"): string {
-  const random = Math.random().toString(36).slice(2, 8);
-  return `${prefix}-${random}`;
+/** Load a partner's referral tree on demand (for the admin drawer). */
+export async function loadPartnerReferralsAction(
+  code: string,
+): Promise<PartnerReferralTree> {
+  await requireMinRole("manager");
+  return getPartnerReferralTree(code);
+}
+
+// Canonical uppercase codes from a confusion-free alphabet (no 0/O/1/I/L).
+const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+function randomCode(): string {
+  let body = "";
+  for (let i = 0; i < 6; i++) {
+    body += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
+  }
+  return `P-${body}`;
+}
+
+/**
+ * A code must be unique across BOTH partners and member referral codes so it
+ * resolves unambiguously. Returns true if the code is free to use.
+ * `excludePartnerId` lets an update keep its own code.
+ */
+async function isCodeAvailable(
+  admin: ReturnType<typeof createSupabaseAdminClient>,
+  code: string,
+  excludePartnerId?: string,
+): Promise<boolean> {
+  const [{ data: partnerHit }, { data: leadHit }] = await Promise.all([
+    admin.from("partners").select("id").ilike("code", code).maybeSingle(),
+    admin.from("leads").select("id").eq("referral_code", code).maybeSingle(),
+  ]);
+  if (leadHit) return false;
+  if (partnerHit && partnerHit.id !== excludePartnerId) return false;
+  return true;
 }
 
 export async function createPartnerAction(
@@ -43,16 +79,13 @@ export async function createPartnerAction(
   if (existing) return { error: "A partner with that email already exists." };
 
   let finalCode = code ?? randomCode();
-  // Code is unique in the DB; retry once on collision.
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const { data: byCode } = await admin
-      .from("partners")
-      .select("id")
-      .eq("code", finalCode)
-      .maybeSingle();
-    if (!byCode) break;
+  // Code must be free across partners AND member codes. Admin-chosen codes
+  // fail loudly; auto-generated ones retry.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    if (await isCodeAvailable(admin, finalCode)) break;
     if (code) return { error: "That code is already taken." };
     finalCode = randomCode();
+    if (attempt === 4) return { error: "Could not generate a unique code. Try again." };
   }
 
   const { data: row, error } = await admin
@@ -77,14 +110,10 @@ export async function updatePartnerAction(
   }
   const admin = createSupabaseAdminClient();
 
-  // Guard code collisions for code changes.
-  const { data: byCode } = await admin
-    .from("partners")
-    .select("id")
-    .eq("code", parsed.data.code)
-    .neq("id", id)
-    .maybeSingle();
-  if (byCode) return { error: "That code is already taken." };
+  // Guard code collisions across partners AND member referral codes.
+  if (!(await isCodeAvailable(admin, parsed.data.code, id))) {
+    return { error: "That code is already taken." };
+  }
 
   const { error } = await admin
     .from("partners")

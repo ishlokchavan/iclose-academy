@@ -19,24 +19,41 @@ export type RecordClickInput = {
   country?: string | null;
 };
 
-/** Insert a click row. Returns true on success. Resolves the lead_id if the code is valid. */
+/**
+ * Insert a click row. Returns true on success.
+ *
+ * A code belongs to either a member (lead) or a partner — both share the
+ * referral namespace. We record clicks for either; the `lead_id` FK is set
+ * only for member codes (partner clicks carry a null lead_id but the `code`
+ * column still identifies them). Unknown codes are silently skipped so bots
+ * hitting random `?ref=` values don't fill the table.
+ */
 export async function recordReferralClick(input: RecordClickInput): Promise<boolean> {
   const code = normalizeCode(input.code);
   if (!code) return false;
 
   const admin = createSupabaseAdminClient();
 
-  // Lookup referring lead by code — silently skip unknown codes
+  // Member code → resolve lead_id. Partner code → record with null lead_id.
   const { data: lead } = await admin
     .from("leads")
     .select("id")
     .eq("referral_code", code)
     .maybeSingle();
-  if (!lead) return false;
+
+  const leadId: string | null = lead?.id ?? null;
+  if (!leadId) {
+    const { data: partner } = await admin
+      .from("partners")
+      .select("id")
+      .ilike("code", code)
+      .maybeSingle();
+    if (!partner) return false; // unknown code — skip
+  }
 
   const { error } = await admin.from("referral_clicks").insert({
     code,
-    lead_id: lead.id,
+    lead_id: leadId,
     visitor_id: input.visitorId ?? null,
     ip_hash: hashIp(input.ip ?? null),
     user_agent: input.userAgent ?? null,

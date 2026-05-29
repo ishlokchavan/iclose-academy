@@ -44,7 +44,7 @@ function Body({
     );
   }
 
-  const { lead, ancestors, downstreamTree, directReferralCount, totalDownstreamCount, clicks } = detail;
+  const { lead, referredBy, ancestors, downstreamTree, directReferralCount, totalDownstreamCount, clicks } = detail;
   // Referral links point at the marketing site, not the academy app origin.
   // Falls back to NEXT_PUBLIC_SITE_URL if the marketing var is unset.
   const siteUrl = (
@@ -92,6 +92,27 @@ function Body({
           Joined {fmtDateTime(lead.created_at)}
           {lead.source ? ` · via ${lead.source}` : null}
         </p>
+
+        {/* Who referred this member — resolves to a fellow member or a partner */}
+        <div className="mt-3 flex items-center gap-2 text-[12px]">
+          <span className="text-ink-muted">Referred by</span>
+          {referredBy ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface-subtle px-2 py-0.5">
+              <span className="font-medium text-ink truncate max-w-[160px]">
+                {referredBy.name || referredBy.email || referredBy.referral_code}
+              </span>
+              <span
+                className={`text-[9.5px] font-semibold uppercase tracking-wider ${
+                  referredBy.kind === "partner" ? "text-accent" : "text-ink-muted"
+                }`}
+              >
+                {referredBy.kind === "partner" ? "Partner" : "Member"}
+              </span>
+            </span>
+          ) : (
+            <span className="text-ink-muted">Organic — no referrer</span>
+          )}
+        </div>
       </div>
 
       {/* Stats */}
@@ -124,9 +145,15 @@ function Body({
           <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[12px]">
             {[...ancestors].reverse().map((a, i, arr) => (
               <span key={a.id} className="inline-flex items-center gap-1.5">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface-subtle px-2 py-0.5">
+                <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 ${
+                  a.kind === "partner"
+                    ? "border-accent/30 bg-accent/10"
+                    : "border-hairline bg-surface-subtle"
+                }`}>
                   <span className="font-medium text-ink truncate max-w-[140px]">{a.name || a.email}</span>
-                  {a.referral_code ? (
+                  {a.kind === "partner" ? (
+                    <span className="text-[9.5px] font-semibold uppercase tracking-wider text-accent">Partner</span>
+                  ) : a.referral_code ? (
                     <code className="font-mono text-[10px] text-ink-muted">{a.referral_code}</code>
                   ) : null}
                 </span>

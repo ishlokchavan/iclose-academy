@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { PartnersAdminPage } from "@/features/partner-management/components/PartnersAdminPage";
 import {
   getAllPartners,
-  getPartnersOverview,
+  type PartnersOverview,
 } from "@/features/partner-management/server/queries";
 import { requireMinRole } from "@/lib/auth/guards";
 
@@ -13,10 +13,13 @@ export const metadata: Metadata = { title: "Partners" };
 export default async function ManagePartnersPage() {
   const user = await requireMinRole("manager");
 
-  const [overview, partners] = await Promise.all([
-    getPartnersOverview(),
-    getAllPartners(),
-  ]);
+  const partners = await getAllPartners();
+  const overview: PartnersOverview = {
+    totalPartners: partners.length,
+    totalActive: partners.filter((p) => p.status !== "inactive").length,
+    totalClicks: partners.reduce((sum, p) => sum + p.clicks, 0),
+    totalSignups: partners.reduce((sum, p) => sum + p.signups, 0),
+  };
 
   return (
     <div className="space-y-6">

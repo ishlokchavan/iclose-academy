@@ -6,14 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Spinner } from "@/components/ui/spinner";
 import { EmailLink, TelLink } from "@/components/patterns/ContactLink";
+import { MembersTree } from "@/features/members/components/MembersTree";
 import {
   deletePartnerAction,
+  loadPartnerReferralsAction,
   sendPartnerInviteAction,
   setPartnerStatusAction,
   updatePartnerAction,
 } from "@/features/partner-management/server/actions";
-import type { PartnerAdminRow } from "@/features/partner-management/server/queries";
+import type {
+  PartnerAdminRow,
+  PartnerReferralTree,
+} from "@/features/partner-management/server/queries";
 import { formatDateTime } from "@/lib/utils/date";
 
 function FieldRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -56,6 +62,8 @@ export function PartnerAdminDrawer({
   const [error, setError] = useState<string | null>(null);
   const [inviteStatus, setInviteStatus] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", phone: "", code: "", status: "active" as "active" | "inactive" });
+  const [tree, setTree] = useState<PartnerReferralTree | null>(null);
+  const [treeLoading, setTreeLoading] = useState(false);
 
   // Reset to view-mode whenever a new partner is opened.
   useEffect(() => {
@@ -71,6 +79,27 @@ export function PartnerAdminDrawer({
       });
     }
   }, [partner?.id, partner]);
+
+  // Load the partner's referral tree on demand when the drawer opens.
+  useEffect(() => {
+    if (!partner) {
+      setTree(null);
+      return;
+    }
+    let cancelled = false;
+    setTreeLoading(true);
+    setTree(null);
+    loadPartnerReferralsAction(partner.code)
+      .then((result) => {
+        if (!cancelled) setTree(result);
+      })
+      .finally(() => {
+        if (!cancelled) setTreeLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [partner?.id, partner?.code, partner]);
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -173,6 +202,32 @@ export function PartnerAdminDrawer({
                   <FieldRow label="Verified" value={partner.is_verified ? formatDateTime(partner.verified_at ?? "") : "No"} />
                   <FieldRow label="Joined" value={partner.created_at ? formatDateTime(partner.created_at) : null} />
                 </Section>
+
+                {/* Referral tree — who signed up from this partner */}
+                <div>
+                  <div className="mb-2 flex items-baseline justify-between">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-ink-muted">
+                      Referral tree
+                    </p>
+                    {tree ? (
+                      <p className="text-[11px] text-ink-muted">
+                        {tree.directCount} direct
+                        {tree.networkSize > tree.directCount ? ` · ${tree.networkSize} total` : ""}
+                      </p>
+                    ) : null}
+                  </div>
+                  {treeLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Spinner />
+                    </div>
+                  ) : tree && tree.nodes.length > 0 ? (
+                    <MembersTree members={tree.nodes} />
+                  ) : (
+                    <p className="rounded-xl border border-hairline bg-surface-subtle/50 px-4 py-6 text-center text-[13px] text-ink-muted">
+                      No signups from this partner yet.
+                    </p>
+                  )}
+                </div>
 
                 {error ? (
                   <p className="text-[13px] text-destructive" role="alert">{error}</p>

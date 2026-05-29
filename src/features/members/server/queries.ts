@@ -2,6 +2,8 @@ import "server-only";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
+import { buildReferrerChain } from "./referrer";
+
 export type MemberRow = {
   id: string;
   name: string | null;
@@ -45,12 +47,29 @@ export type TreeNode = {
   children: TreeNode[];
 };
 
+/**
+ * The minimal shape the <MembersTree> org-chart needs to render a node.
+ * `MemberRow` satisfies this; the partner referral tree maps its rows to it
+ * too, so both can reuse the same component.
+ */
+export type TreeMember = {
+  id: string;
+  name: string | null;
+  email: string;
+  referral_code: string | null;
+  referred_by_code: string | null;
+  is_verified: boolean;
+  intent: string | null;
+};
+
 export type AncestorNode = {
   id: string;
   name: string | null;
   email: string;
   referral_code: string | null;
   depth: number; // 2 = direct referrer, 3 = referrer's referrer, ...
+  /** Whether this ancestor is a fellow member or a partner. */
+  kind: "member" | "partner";
 };
 
 export type MemberDetail = {
@@ -61,6 +80,8 @@ export type MemberDetail = {
   totalDownstreamCount: number;
   /** Forest of direct referrals; each may have nested children. */
   downstreamTree: TreeNode[];
+  /** The immediate referrer (member or partner), or null if organic. */
+  referredBy: AncestorNode | null;
   /** Upstream chain from immediate referrer (depth 2) up to root. */
   ancestors: AncestorNode[];
   clicks: Array<{
@@ -206,11 +227,14 @@ export async function getMemberById(leadId: string): Promise<MemberDetail | null
 
   if (error || !lead) return null;
 
-  const [descRes, ancRes, clicksRes] = await Promise.all([
+  const [descRes, ancestorChain, clicksRes] = await Promise.all([
     lead.referral_code
       ? admin.rpc("referral_tree_descendants", { p_code: lead.referral_code, p_max_depth: 10 })
       : Promise.resolve({ data: [] }),
-    admin.rpc("referral_tree_ancestors", { p_lead_id: leadId, p_max_depth: 10 }),
+    // Walk upward by code (the old referral_tree_ancestors RPC keyed on
+    // referred_by_lead_id, which is never populated, so it always returned
+    // nothing). This resolves each hop to a member or partner.
+    buildReferrerChain(lead.referred_by_code),
     lead.referral_code
       ? admin
           .from("referral_clicks")
@@ -267,18 +291,13 @@ export async function getMemberById(leadId: string): Promise<MemberDetail | null
     }
   }
 
-  const ancestors = ((ancRes.data ?? []) as Array<{
-    id: string;
-    email: string;
-    name: string | null;
-    referral_code: string | null;
-    depth: number;
-  }>).map((a) => ({
+  const ancestors: AncestorNode[] = ancestorChain.map((a) => ({
     id: a.id,
     name: a.name,
-    email: a.email,
-    referral_code: a.referral_code,
+    email: a.email ?? "",
+    referral_code: a.code,
     depth: a.depth,
+    kind: a.kind,
   }));
 
   return {
@@ -291,6 +310,7 @@ export async function getMemberById(leadId: string): Promise<MemberDetail | null
     directReferralCount: forest.length,
     totalDownstreamCount: descendants.length,
     downstreamTree: forest,
+    referredBy: ancestors[0] ?? null,
     ancestors,
     clicks: clickRows,
   };

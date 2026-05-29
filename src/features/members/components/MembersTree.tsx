@@ -5,11 +5,11 @@ import { useMemo } from "react";
 
 import { cn } from "@/lib/utils/cn";
 
-import type { MemberRow } from "../server/queries";
+import type { TreeMember } from "../server/queries";
 
-type TreeNodeData = MemberRow & { _children: TreeNodeData[]; _depth: number };
+type TreeNodeData = TreeMember & { _children: TreeNodeData[]; _depth: number };
 
-function buildForest(members: MemberRow[]): TreeNodeData[] {
+function buildForest(members: TreeMember[]): TreeNodeData[] {
   const all: TreeNodeData[] = members.map((m) => ({ ...m, _children: [], _depth: 0 }));
   const byCode = new Map<string, TreeNodeData>();
   for (const n of all) {
@@ -61,12 +61,12 @@ const INTENT_TONE: Record<string, string> = {
 
 export function MembersTree({
   members,
-  onSelect,
-  selectedId,
+  onSelect = () => {},
+  selectedId = null,
 }: {
-  members: MemberRow[];
-  onSelect: (id: string) => void;
-  selectedId: string | null;
+  members: TreeMember[];
+  onSelect?: (id: string) => void;
+  selectedId?: string | null;
 }) {
   const roots = useMemo(() => buildForest(members), [members]);
 
