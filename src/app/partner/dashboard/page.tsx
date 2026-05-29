@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-import { SignOutButton } from "../sign-out-button";
+import { PartnerNav } from "../partner-nav";
 import { CopyReferralLink } from "./copy-referral-link";
 
 export default async function PartnerDashboardPage() {
@@ -42,7 +42,7 @@ export default async function PartnerDashboardPage() {
           <h1 className="text-3xl font-bold mb-2">Your Dashboard</h1>
           <p className="text-gray-500">Welcome back, {partner?.name ?? user.email}</p>
         </div>
-        <SignOutButton />
+        <PartnerNav />
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-10">
