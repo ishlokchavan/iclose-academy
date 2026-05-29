@@ -9,6 +9,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
 import { EmailLink, TelLink } from "@/components/patterns/ContactLink";
 import { MembersTree } from "@/features/members/components/MembersTree";
+import { PartnerShareLink } from "@/features/partner-management/components/PartnerShareLink";
 import {
   deletePartnerAction,
   loadPartnerReferralsAction,
@@ -202,6 +203,14 @@ export function PartnerAdminDrawer({
                   <FieldRow label="Verified" value={partner.is_verified ? formatDateTime(partner.verified_at ?? "") : "No"} />
                   <FieldRow label="Joined" value={partner.created_at ? formatDateTime(partner.created_at) : null} />
                 </Section>
+
+                {/* Shareable referral link — copy or send via WhatsApp */}
+                <div>
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-ink-muted">
+                    Referral link
+                  </p>
+                  <PartnerShareLink code={partner.code} partnerName={partner.name} />
+                </div>
 
                 {/* Referral tree — who signed up from this partner */}
                 <div>

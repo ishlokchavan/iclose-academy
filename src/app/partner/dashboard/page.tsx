@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { MembersTree } from "@/features/members/components/MembersTree";
+import { partnerReferralLink } from "@/features/partner-management/link";
 import { getPartnerReferralTree } from "@/features/partner-management/server/queries";
 import { getSessionUser } from "@/lib/auth/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -22,7 +23,7 @@ export default async function PartnerDashboardPage() {
     .maybeSingle();
 
   const tree = partner ? await getPartnerReferralTree(partner.code) : null;
-  const link = `https://iclose.ae/ref/${partner?.code ?? ""}`;
+  const link = partner ? partnerReferralLink(partner.code) : "";
 
   return (
     <main className="min-h-screen px-6 py-16 max-w-3xl mx-auto">

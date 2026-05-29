@@ -1,13 +1,14 @@
 "use client";
 
 import { type ColumnDef } from "@tanstack/react-table";
-import { UserPlus } from "lucide-react";
+import { Check, Copy, UserPlus } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/patterns/DataTable";
 import { EmailLink, TelLink } from "@/components/patterns/ContactLink";
 import { filterByPeriod, PeriodFilter, type Period } from "@/components/patterns/PeriodFilter";
+import { partnerReferralLink } from "@/features/partner-management/link";
 import { formatDateTime } from "@/lib/utils/date";
 
 import { AddPartnerModal } from "./AddPartnerModal";
@@ -142,6 +143,12 @@ export function PartnersAdminPage({
         </span>
       ),
     },
+    {
+      id: "link",
+      header: "Link",
+      enableSorting: false,
+      cell: ({ row }) => <RowCopyButton code={row.original.code} />,
+    },
   ], []);
 
   return (
@@ -188,5 +195,32 @@ function StatTile({ label, value }: { label: string; value: number }) {
       <p className="text-[11px] font-medium text-ink-muted">{label}</p>
       <p className="text-[22px] font-semibold tabular-nums text-ink">{value}</p>
     </div>
+  );
+}
+
+/** Inline copy button for a partner's referral link. Stops row-click. */
+function RowCopyButton({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+  async function copy(e: React.MouseEvent) {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(partnerReferralLink(code));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard unavailable */
+    }
+  }
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title="Copy referral link"
+      aria-label="Copy referral link"
+      className="inline-flex items-center gap-1.5 rounded-lg border border-hairline px-2 py-1 text-[12px] font-medium text-ink-muted transition-colors hover:border-ink/30 hover:text-ink"
+    >
+      {copied ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
+      <span className="hidden sm:inline">{copied ? "Copied" : "Copy"}</span>
+    </button>
   );
 }
