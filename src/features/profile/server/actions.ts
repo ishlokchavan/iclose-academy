@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { normalizeCode } from "@/features/members/constants";
 import { readReferralCookie } from "@/features/members/server/cookies";
 import { sendReferralSignupEmail } from "@/lib/email/send-referral-signup-email";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -98,7 +99,15 @@ export async function updateOwnProfileAction(fields: {
         .ilike("email", user.email);
       if (leadErr) return { error: leadErr.message };
     } else {
-      const referredByCode = await readReferralCookie();
+      // Attribution source, most-durable first: the code stashed on the account
+      // at signup (user_metadata), then the cross-domain referral cookie.
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+      const stashedCode = normalizeCode(
+        (authUser?.user_metadata?.referred_by_code as string | undefined) ?? null,
+      );
+      const referredByCode = stashedCode ?? (await readReferralCookie());
       const { error: leadErr } = await admin.from("leads").insert({
         email: user.email,
         name: fullName ?? "",

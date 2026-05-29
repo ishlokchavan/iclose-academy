@@ -23,6 +23,8 @@ import {
   signUpSchema,
   verifyOtpSchema,
 } from "@/features/auth/schemas/credentials";
+import { normalizeCode } from "@/features/members/constants";
+import { readReferralCookie } from "@/features/members/server/cookies";
 import type { Database } from "@/types/db";
 
 export type ActionState = { error?: string; success?: string; nextEmail?: string } | null;
@@ -75,12 +77,21 @@ export async function signUpWithPasswordAction(
     return { error: SIGNUP_BLOCKED_MESSAGE };
   }
 
+  // Stash the partner/member referral code on the account at signup so it
+  // survives until the lead is materialized at profile completion (leads
+  // require a phone, which we don't have yet). Durable across the cross-domain
+  // cookie lifetime — see updateOwnProfileAction.
+  const referredByCode = normalizeCode(await readReferralCookie());
+
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
-      data: { full_name: parsed.data.fullName },
+      data: {
+        full_name: parsed.data.fullName,
+        ...(referredByCode ? { referred_by_code: referredByCode } : {}),
+      },
       emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/auth/callback`,
     },
   });
