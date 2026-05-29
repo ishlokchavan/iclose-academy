@@ -47,12 +47,15 @@ export async function authUserExistsForEmail(email: string): Promise<boolean> {
   const admin = createSupabaseAdminClient();
   const norm = email.trim().toLowerCase();
   if (!norm) return false;
-  const { data } = await admin
-    .from("user_emails")
-    .select("id")
-    .ilike("email", norm)
-    .limit(1);
-  return Array.isArray(data) && data.length > 0;
+  // Use the SECURITY DEFINER RPC so this works regardless of session context.
+  // (The user_emails view is gated by is_staff(), which is false for the
+  // service-role client because auth.uid() is null — so a direct view query
+  // would always return empty here and falsely block already-registered users.)
+  const { data, error } = await admin.rpc("get_auth_user_id_by_email", {
+    p_email: norm,
+  });
+  if (error) return false;
+  return typeof data === "string" && data.length > 0;
 }
 
 /** Human-readable message returned to the UI when signup is refused. */
