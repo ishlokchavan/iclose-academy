@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/patterns/DataTable";
 import { EmailLink, TelLink } from "@/components/patterns/ContactLink";
 import { filterByPeriod, PeriodFilter, type Period } from "@/components/patterns/PeriodFilter";
+import { useViewMode, ViewToggle } from "@/components/patterns/ViewToggle";
+import { MembersTree } from "@/features/members/components/MembersTree";
+import type { TreeMember } from "@/features/members/server/queries";
 import { partnerReferralLink } from "@/features/partner-management/link";
 import { formatDateTime } from "@/lib/utils/date";
 
@@ -17,6 +20,8 @@ import type {
   PartnerAdminRow,
   PartnersOverview,
 } from "../server/queries";
+
+const VIEW_STORAGE_KEY = "iclose.partners.view";
 
 function initials(name: string) {
   return (name || "P")
@@ -31,16 +36,29 @@ function initials(name: string) {
 export function PartnersAdminPage({
   partners,
   overview,
+  treeNodes,
   canDelete,
 }: {
   partners: PartnerAdminRow[];
   overview: PartnersOverview;
+  /** Partner-rooted forest for the tree view. Defaults to empty. */
+  treeNodes?: TreeMember[];
   canDelete: boolean;
 }) {
   const [selected, setSelected] = useState<PartnerAdminRow | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [period, setPeriod] = useState<Period>("all");
   const [showArchived, setShowArchived] = useState(false);
+  const { view, changeView } = useViewMode(VIEW_STORAGE_KEY);
+
+  // Tree-view consumers select by partner id (prefixed "partner:<id>" in the
+  // synthetic nodes). Map that back to the PartnerAdminRow to open the drawer.
+  function selectByTreeNodeId(nodeId: string) {
+    const partnerId = nodeId.startsWith("partner:") ? nodeId.slice("partner:".length) : null;
+    if (!partnerId) return;
+    const row = partners.find((p) => p.id === partnerId);
+    if (row) setSelected(row);
+  }
 
   const archivedCount = partners.filter((p) => p.status === "archived").length;
   const visible = useMemo(() => {
@@ -167,9 +185,9 @@ export function PartnersAdminPage({
         <StatTile label="Total signups" value={overview.totalSignups} />
       </div>
 
-      <div className="flex items-center gap-2">
-        <PeriodFilter value={period} onChange={setPeriod} />
-        {archivedCount > 0 ? (
+      <div className="flex flex-wrap items-center gap-2">
+        {view === "table" ? <PeriodFilter value={period} onChange={setPeriod} /> : null}
+        {view === "table" && archivedCount > 0 ? (
           <label className="ml-2 inline-flex items-center gap-1.5 text-[12px] text-ink-muted cursor-pointer">
             <input
               type="checkbox"
@@ -180,22 +198,45 @@ export function PartnersAdminPage({
             Show archived ({archivedCount})
           </label>
         ) : null}
-        <div className="ml-auto">
+        {view !== "table" ? (
+          <p className="text-[12px] text-ink-muted">
+            {(treeNodes ?? []).filter((n) => n.kind === "partner").length} partner network
+            {(treeNodes ?? []).filter((n) => n.kind === "partner").length === 1 ? "" : "s"} · click any node
+          </p>
+        ) : null}
+        <ViewToggle
+          view={view}
+          onChange={changeView}
+          className={view !== "table" ? "ml-auto" : undefined}
+        />
+        {view === "table" ? (
           <Button onClick={() => setAddOpen(true)}>
             <UserPlus className="size-4" />
             <span className="hidden sm:inline">Add partner</span>
           </Button>
-        </div>
+        ) : null}
       </div>
 
-      <DataTable
-        data={visible}
-        columns={columns}
-        getRowId={(p) => p.id}
-        onRowClick={(p) => setSelected(p)}
-        initialSorting={[{ id: "joined", desc: true }]}
-        emptyMessage="No partners yet."
-      />
+      {view === "table" ? (
+        <DataTable
+          data={visible}
+          columns={columns}
+          getRowId={(p) => p.id}
+          onRowClick={(p) => setSelected(p)}
+          initialSorting={[{ id: "joined", desc: true }]}
+          emptyMessage="No partners yet."
+        />
+      ) : (treeNodes ?? []).length > 0 ? (
+        <MembersTree
+          members={treeNodes ?? []}
+          onSelect={selectByTreeNodeId}
+          selectedId={selected ? `partner:${selected.id}` : null}
+        />
+      ) : (
+        <div className="rounded-2xl border border-hairline bg-surface-raised py-16 text-center text-[13px] text-ink-muted">
+          No partner has brought in a signup yet. Share a referral link to see the tree fill in.
+        </div>
+      )}
 
       <PartnerAdminDrawer
         partner={selected}

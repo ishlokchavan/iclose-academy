@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { PageHeader } from "@/components/patterns/PageHeader";
+import { getPartnerRootedTreeNodes } from "@/features/members/server/queries";
 import { PartnersAdminPage } from "@/features/partner-management/components/PartnersAdminPage";
 import {
   getAllPartners,
@@ -13,9 +14,10 @@ export const metadata: Metadata = { title: "Partners" };
 export default async function ManagePartnersPage() {
   const user = await requireMinRole("manager");
 
-  const [partners, overview] = await Promise.all([
+  const [partners, overview, treeNodes] = await Promise.all([
     getAllPartners(),
     getPartnersOverview(),
+    getPartnerRootedTreeNodes(),
   ]);
 
   return (
@@ -28,6 +30,7 @@ export default async function ManagePartnersPage() {
       <PartnersAdminPage
         partners={partners}
         overview={overview}
+        treeNodes={treeNodes}
         canDelete={user.role === "admin"}
       />
     </div>

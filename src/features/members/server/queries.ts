@@ -460,3 +460,42 @@ export async function getNetworkTreeNodes(): Promise<TreeMember[]> {
 
   return [...partnerNodes, ...memberNodes];
 }
+
+/**
+ * Subset of the unified network tree restricted to partner-rooted forests:
+ * every partner with at least one signup, plus every member reachable from
+ * any partner (direct or transitive). Used by /manage/partners tree view —
+ * member-only networks belong on /manage/members, not here.
+ */
+export async function getPartnerRootedTreeNodes(): Promise<TreeMember[]> {
+  const all = await getNetworkTreeNodes();
+
+  // Children-by-parent-code index for one BFS over the forest.
+  const childrenByCode = new Map<string, TreeMember[]>();
+  for (const n of all) {
+    if (n.referred_by_code) {
+      const arr = childrenByCode.get(n.referred_by_code) ?? [];
+      arr.push(n);
+      childrenByCode.set(n.referred_by_code, arr);
+    }
+  }
+
+  const kept = new Set<string>();
+  const queue: string[] = [];
+  for (const n of all) {
+    if (n.kind === "partner") {
+      kept.add(n.id);
+      if (n.referral_code) queue.push(n.referral_code);
+    }
+  }
+  while (queue.length) {
+    const parentCode = queue.shift()!;
+    for (const child of childrenByCode.get(parentCode) ?? []) {
+      if (kept.has(child.id)) continue;
+      kept.add(child.id);
+      if (child.referral_code) queue.push(child.referral_code);
+    }
+  }
+
+  return all.filter((n) => kept.has(n.id));
+}

@@ -1,13 +1,13 @@
 "use client";
 
-import { MousePointerClick, Network, Table as TableIcon, Users, Wallet } from "lucide-react";
+import { MousePointerClick, Users, Wallet } from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { useEffect, useMemo, useState } from "react";
 
 import { DataTable } from "@/components/patterns/DataTable";
 import { EmailLink } from "@/components/patterns/ContactLink";
 import { filterByPeriod, PeriodFilter, type Period } from "@/components/patterns/PeriodFilter";
-import { cn } from "@/lib/utils/cn";
+import { useViewMode, ViewToggle } from "@/components/patterns/ViewToggle";
 import { formatDateTime } from "@/lib/utils/date";
 
 import { MemberDrawer } from "./MemberDrawer";
@@ -19,7 +19,6 @@ import type {
   TreeMember,
 } from "../server/queries";
 
-type ViewMode = "table" | "tree";
 const VIEW_STORAGE_KEY = "iclose.members.view";
 
 function initials(name: string | null, email: string) {
@@ -52,20 +51,7 @@ export function MembersPage({
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [filter, setFilter]   = useState<"all" | "active" | "referred">("all");
   const [period, setPeriod]   = useState<Period>("all");
-  const [view, setView]       = useState<ViewMode>("table");
-
-  // Restore the view preference on first mount only (avoids SSR mismatch).
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(VIEW_STORAGE_KEY);
-      if (stored === "tree" || stored === "table") setView(stored);
-    } catch { /* localStorage unavailable */ }
-  }, []);
-
-  function changeView(next: ViewMode) {
-    setView(next);
-    try { localStorage.setItem(VIEW_STORAGE_KEY, next); } catch { /* ignore */ }
-  }
+  const { view, changeView }  = useViewMode(VIEW_STORAGE_KEY);
 
   // Drop optimistic deletions once the server has caught up.
   useEffect(() => {
@@ -277,20 +263,11 @@ export function MembersPage({
         {view === "table" ? (
           <PeriodFilter value={period} onChange={setPeriod} className="ml-auto" />
         ) : null}
-        <div className={cn("inline-flex items-center rounded-full border border-hairline bg-surface-raised p-0.5", view !== "table" && "ml-auto")}>
-          <ViewToggleBtn
-            on={view === "table"}
-            onClick={() => changeView("table")}
-            icon={TableIcon}
-            label="Table view"
-          />
-          <ViewToggleBtn
-            on={view === "tree"}
-            onClick={() => changeView("tree")}
-            icon={Network}
-            label="Tree view"
-          />
-        </div>
+        <ViewToggle
+          view={view}
+          onChange={changeView}
+          className={view !== "table" ? "ml-auto" : undefined}
+        />
       </div>
 
       {view === "table" ? (
@@ -368,27 +345,3 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
   );
 }
 
-function ViewToggleBtn({
-  on, onClick, icon: Icon, label,
-}: {
-  on: boolean;
-  onClick: () => void;
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={on}
-      aria-label={label}
-      title={label}
-      className={cn(
-        "grid size-7 place-items-center rounded-full transition-colors",
-        on ? "bg-ink text-surface" : "text-ink-muted hover:text-ink",
-      )}
-    >
-      <Icon className="size-3.5" />
-    </button>
-  );
-}
