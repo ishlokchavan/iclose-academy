@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
-import { normalizeCode } from "@/features/members/constants";
+import { normalizeCode, REF_COOKIE } from "@/features/members/constants";
 import { logAudit } from "@/features/audit/server/log";
 import { sendReferralSignupEmail } from "@/lib/email/send-referral-signup-email";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -81,7 +81,12 @@ export async function POST(req: NextRequest) {
 
   const d = parsed.data;
   const fullName = [d.firstName, d.lastName].filter(Boolean).join(" ").trim();
-  const referredByCode = normalizeCode(d.referredByCode ?? null);
+  // Prefer the code the form sent; fall back to the attribution cookie set by
+  // middleware when someone landed via ?ref= / ?partner= but the form didn't
+  // forward it. Either way it's normalized to the canonical (uppercase) form.
+  const referredByCode =
+    normalizeCode(d.referredByCode ?? null) ??
+    normalizeCode(req.cookies.get(REF_COOKIE)?.value ?? null);
   const userAgent = req.headers.get("user-agent");
   const referer   = req.headers.get("referer");
 

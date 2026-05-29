@@ -110,9 +110,11 @@ export async function getPartnerReferralTree(code: string): Promise<PartnerRefer
   const admin = createSupabaseAdminClient();
   const canonical = normalizeCode(code) ?? upper(code);
 
-  const [descRes, statsRes] = await Promise.all([
+  // Clicks are matched case-insensitively: the external /ref handler may write
+  // codes in their raw (lowercase) form, so we can't rely on an exact match.
+  const [descRes, clicksRes] = await Promise.all([
     admin.rpc("referral_tree_descendants", { p_code: canonical, p_max_depth: 10 }),
-    admin.rpc("referral_stats_for_code", { p_code: canonical }).maybeSingle(),
+    admin.from("referral_clicks").select("visitor_id").ilike("code", canonical),
   ]);
 
   const rows = (descRes.data ?? []) as Array<{
@@ -135,16 +137,16 @@ export async function getPartnerReferralTree(code: string): Promise<PartnerRefer
     intent: null, // the RPC doesn't return intent; not needed for the tree
   }));
 
-  const directCount = rows.filter((r) => r.depth === 1).length;
-  const stats = statsRes.data as
-    | { total_clicks: number; unique_visitors: number; total_referrals: number }
-    | null;
+  const clickRows = clicksRes.data ?? [];
+  const uniqueVisitors = new Set(
+    clickRows.map((c) => c.visitor_id).filter(Boolean) as string[],
+  ).size;
 
   return {
-    directCount,
+    directCount: rows.filter((r) => r.depth === 1).length,
     networkSize: rows.length,
-    clicks: Number(stats?.total_clicks ?? 0),
-    uniqueVisitors: Number(stats?.unique_visitors ?? 0),
+    clicks: clickRows.length,
+    uniqueVisitors,
     nodes,
   };
 }

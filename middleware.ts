@@ -18,10 +18,10 @@ export async function middleware(request: NextRequest) {
   const { pathname, searchParams, origin } = request.nextUrl;
 
   // ── Referral attribution ──────────────────────────────────────────────────
-  // Capture ?ref=CODE on any request, drop it into a cookie, and asynchronously
-  // record the click. We do this before redirects so the cookie sticks even if
-  // the request is bounced to /sign-in or /dashboard.
-  const rawRef = searchParams.get(REF_QUERY_PARAM);
+  // Capture ?ref=CODE (or the ?partner=CODE alias) on any request, drop it into
+  // a cookie, and asynchronously record the click. We do this before redirects
+  // so the cookie sticks even if the request is bounced to /sign-in or /dashboard.
+  const rawRef = searchParams.get(REF_QUERY_PARAM) ?? searchParams.get("partner");
   const refCode = normalizeCode(rawRef);
   if (refCode) {
     response.cookies.set(REF_COOKIE, refCode, {
