@@ -3,7 +3,11 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/patterns/PageHeader";
 import { MembersPage } from "@/features/members/components/MembersPage";
 import { loadMemberDetailAction } from "@/features/members/server/actions";
-import { getMembersOverview, getAllMembers } from "@/features/members/server/queries";
+import {
+  getAllMembers,
+  getMembersOverview,
+  getNetworkTreeNodes,
+} from "@/features/members/server/queries";
 import { requireMinRole } from "@/lib/auth/guards";
 
 export const metadata: Metadata = { title: "Members" };
@@ -11,9 +15,10 @@ export const metadata: Metadata = { title: "Members" };
 export default async function ManageMembersPage() {
   await requireMinRole("manager");
 
-  const [overview, members] = await Promise.all([
+  const [overview, members, treeNodes] = await Promise.all([
     getMembersOverview(),
     getAllMembers(),
+    getNetworkTreeNodes(),
   ]);
 
   return (
@@ -26,6 +31,7 @@ export default async function ManageMembersPage() {
       <MembersPage
         overview={overview}
         members={members}
+        treeNodes={treeNodes}
         loadDetail={loadMemberDetailAction}
       />
     </div>

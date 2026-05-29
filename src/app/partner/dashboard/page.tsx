@@ -68,7 +68,21 @@ export default async function PartnerDashboardPage() {
               ) : null}
             </div>
             {tree && tree.nodes.length > 0 ? (
-              <MembersTree members={tree.nodes} />
+              <MembersTree
+                members={[
+                  {
+                    id: `partner:${partner.id}`,
+                    name: partner.name,
+                    email: partner.email,
+                    referral_code: partner.code.toUpperCase(),
+                    referred_by_code: null,
+                    is_verified: true,
+                    intent: null,
+                    kind: "partner",
+                  },
+                  ...tree.nodes,
+                ]}
+              />
             ) : (
               <p className="border rounded-xl p-6 text-center text-sm text-gray-500">
                 No signups yet. Share your referral link to start building your network.

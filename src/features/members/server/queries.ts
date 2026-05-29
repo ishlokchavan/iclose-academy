@@ -29,6 +29,9 @@ export type MemberRow = {
   referred_by_lead_id: string | null;
   clicks: number;
   unique_visitors: number;
+  /** Resolved referrer for table display. Null if organic or unresolvable. */
+  referred_by_name: string | null;
+  referred_by_kind: "member" | "partner" | null;
 };
 
 // Kept as one literal string so Supabase's generated typings can narrow
@@ -51,6 +54,10 @@ export type TreeNode = {
  * The minimal shape the <MembersTree> org-chart needs to render a node.
  * `MemberRow` satisfies this; the partner referral tree maps its rows to it
  * too, so both can reuse the same component.
+ *
+ * `kind` lets a partner appear as a root in the same forest as members — they
+ * sit on top of their member networks, so partner-referred members no longer
+ * fall into the "Independent" bucket.
  */
 export type TreeMember = {
   id: string;
@@ -60,6 +67,7 @@ export type TreeMember = {
   referred_by_code: string | null;
   is_verified: boolean;
   intent: string | null;
+  kind?: "member" | "partner";
 };
 
 export type AncestorNode = {
@@ -131,15 +139,37 @@ export async function getMembersOverview(): Promise<MembersOverview> {
 export async function getAllMembers(): Promise<MemberRow[]> {
   const admin = createSupabaseAdminClient();
 
-  const { data: leads, error } = await admin
-    .from("leads")
-    .select(
-      LEAD_FIELDS,
-    )
-    .order("referral_count", { ascending: false })
-    .order("created_at", { ascending: false });
+  const [{ data: leads, error }, { data: partners }] = await Promise.all([
+    admin
+      .from("leads")
+      .select(LEAD_FIELDS)
+      .order("referral_count", { ascending: false })
+      .order("created_at", { ascending: false }),
+    admin.from("partners").select("id, name, email, code"),
+  ]);
 
   if (error || !leads) return [];
+
+  // Build a code → (kind, name) map for resolving each member's referrer
+  // ("Referred by" column). Codes are canonical-uppercase; we compare with
+  // upper() so legacy lowercase partner codes still match.
+  type ReferrerInfo = { name: string; kind: "member" | "partner" };
+  const referrerByCode = new Map<string, ReferrerInfo>();
+  for (const l of leads) {
+    if (l.referral_code) {
+      referrerByCode.set(l.referral_code.toUpperCase(), {
+        name: l.name || l.email,
+        kind: "member",
+      });
+    }
+  }
+  // Member codes win on collision (shouldn't happen — we guard at write time).
+  for (const p of partners ?? []) {
+    const key = (p.code ?? "").toUpperCase();
+    if (key && !referrerByCode.has(key)) {
+      referrerByCode.set(key, { name: p.name || p.email, kind: "partner" });
+    }
+  }
 
   // Group clicks by code in a single round-trip.
   const codes = leads.map((l) => l.referral_code).filter(Boolean) as string[];
@@ -205,11 +235,15 @@ export async function getAllMembers(): Promise<MemberRow[]> {
 
   return leads.map((l) => {
     const stats = l.referral_code ? clickStats[l.referral_code] : undefined;
+    const refKey = l.referred_by_code ? l.referred_by_code.toUpperCase() : null;
+    const referrer = refKey ? referrerByCode.get(refKey) : null;
     return {
       ...l,
       clicks: stats?.clicks ?? 0,
       unique_visitors: stats?.unique ?? 0,
       network_size: networkSize(l.referral_code),
+      referred_by_name: referrer?.name ?? null,
+      referred_by_kind: referrer?.kind ?? null,
     };
   });
 }
@@ -306,6 +340,8 @@ export async function getMemberById(leadId: string): Promise<MemberDetail | null
       clicks: clickRows.length,
       unique_visitors: uniqueVisitors,
       network_size: descendants.length,
+      referred_by_name: ancestors[0]?.name ?? null,
+      referred_by_kind: ancestors[0]?.kind ?? null,
     },
     directReferralCount: forest.length,
     totalDownstreamCount: descendants.length,
@@ -350,4 +386,62 @@ export async function getMemberByEmail(email: string): Promise<{
     clicks: Number(stats?.total_clicks ?? 0),
     uniqueVisitors: Number(stats?.unique_visitors ?? 0),
   };
+}
+
+/**
+ * All nodes for the unified referral org-chart: every member, plus every
+ * partner that has at least one direct signup. Partners surface as roots
+ * (referred_by_code = null), so partner-referred members appear under them
+ * instead of being mislabeled as "Independent".
+ */
+export async function getNetworkTreeNodes(): Promise<TreeMember[]> {
+  const admin = createSupabaseAdminClient();
+
+  const [{ data: leads }, { data: partners }] = await Promise.all([
+    admin
+      .from("leads")
+      .select("id, name, email, referral_code, referred_by_code, is_verified, intent"),
+    admin.from("partners").select("id, name, email, code"),
+  ]);
+
+  const memberNodes: TreeMember[] = (leads ?? []).map((l) => ({
+    id: l.id,
+    name: l.name,
+    email: l.email,
+    referral_code: l.referral_code,
+    referred_by_code: l.referred_by_code,
+    is_verified: l.is_verified,
+    intent: l.intent ?? null,
+    kind: "member",
+  }));
+
+  // Only include partners that actually have a downstream — keeps the tree
+  // focused and avoids a "wall of partners with 0 referrals" cluttering it.
+  const referredCodes = new Set(
+    memberNodes
+      .map((m) => m.referred_by_code?.toUpperCase())
+      .filter((c): c is string => !!c),
+  );
+
+  const partnerNodes: TreeMember[] = (partners ?? [])
+    .filter((p) => referredCodes.has((p.code ?? "").toUpperCase()))
+    .map((p) => ({
+      id: `partner:${p.id}`,
+      name: p.name,
+      email: p.email,
+      referral_code: (p.code ?? "").toUpperCase(),
+      referred_by_code: null,
+      is_verified: true,
+      intent: null,
+      kind: "partner",
+    }));
+
+  // Normalize member nodes' codes to uppercase so partner-root matching works
+  // against legacy lowercase partner codes too.
+  for (const m of memberNodes) {
+    if (m.referred_by_code) m.referred_by_code = m.referred_by_code.toUpperCase();
+    if (m.referral_code) m.referral_code = m.referral_code.toUpperCase();
+  }
+
+  return [...partnerNodes, ...memberNodes];
 }

@@ -230,7 +230,21 @@ export function PartnerAdminDrawer({
                       <Spinner />
                     </div>
                   ) : tree && tree.nodes.length > 0 ? (
-                    <MembersTree members={tree.nodes} />
+                    <MembersTree
+                      members={[
+                        {
+                          id: `partner:${partner.id}`,
+                          name: partner.name,
+                          email: partner.email,
+                          referral_code: partner.code.toUpperCase(),
+                          referred_by_code: null,
+                          is_verified: true,
+                          intent: null,
+                          kind: "partner",
+                        },
+                        ...tree.nodes,
+                      ]}
+                    />
                   ) : (
                     <p className="rounded-xl border border-hairline bg-surface-subtle/50 px-4 py-6 text-center text-[13px] text-ink-muted">
                       No signups from this partner yet.

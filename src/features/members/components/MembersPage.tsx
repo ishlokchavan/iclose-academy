@@ -12,7 +12,12 @@ import { formatDateTime } from "@/lib/utils/date";
 
 import { MemberDrawer } from "./MemberDrawer";
 import { MembersTree } from "./MembersTree";
-import type { MemberDetail, MembersOverview, MemberRow } from "../server/queries";
+import type {
+  MemberDetail,
+  MembersOverview,
+  MemberRow,
+  TreeMember,
+} from "../server/queries";
 
 type ViewMode = "table" | "tree";
 const VIEW_STORAGE_KEY = "iclose.members.view";
@@ -32,10 +37,13 @@ function initials(name: string | null, email: string) {
 export function MembersPage({
   overview,
   members,
+  treeNodes,
   loadDetail,
 }: {
   overview: MembersOverview;
   members: MemberRow[];
+  /** Unified tree input: members + partner roots. Defaults to members alone. */
+  treeNodes?: TreeMember[];
   loadDetail: (id: string) => Promise<MemberDetail | null>;
 }) {
   const [selectedId, setId]   = useState<string | null>(null);
@@ -139,6 +147,38 @@ export function MembersPage({
           {row.original.referral_code ?? "—"}
         </code>
       ),
+    },
+    {
+      id: "referredBy",
+      accessorFn: (m) => m.referred_by_name ?? "",
+      header: "Referred by",
+      enableGlobalFilter: true,
+      enableColumnFilter: true,
+      meta: { filter: "text", className: "hidden md:table-cell", filterPlaceholder: "name" },
+      cell: ({ row }) => {
+        const m = row.original;
+        if (!m.referred_by_code) {
+          return <span className="text-[12px] text-ink-muted/60">Organic</span>;
+        }
+        const name = m.referred_by_name;
+        const kind = m.referred_by_kind;
+        return (
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="truncate text-[13px] text-ink">
+              {name ?? <code className="font-mono text-[12px] text-ink-muted">{m.referred_by_code}</code>}
+            </span>
+            {kind === "partner" ? (
+              <span className="shrink-0 rounded-full border border-accent/30 bg-accent/10 px-1.5 py-0 text-[9.5px] font-semibold uppercase tracking-wider text-accent">
+                Partner
+              </span>
+            ) : kind === "member" ? (
+              <span className="shrink-0 rounded-full border border-hairline bg-surface-subtle px-1.5 py-0 text-[9.5px] font-semibold uppercase tracking-wider text-ink-muted">
+                Member
+              </span>
+            ) : null}
+          </div>
+        );
+      },
     },
     {
       id: "clicks",
@@ -258,7 +298,7 @@ export function MembersPage({
         />
       ) : (
         <MembersTree
-          members={members.filter((m) => !deletedIds.has(m.id))}
+          members={(treeNodes ?? members).filter((n) => !deletedIds.has(n.id))}
           onSelect={openDetail}
           selectedId={selectedId}
         />

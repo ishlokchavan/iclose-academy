@@ -80,9 +80,12 @@ export function MembersTree({
 
   // Split: trees with actual branches vs. solo roots (no referrals).
   // Solo roots get a compact chip grid below — saves a screenful of empty
-  // boxes once the platform has 100+ members.
-  const networks  = roots.filter((r) => r._children.length > 0);
-  const solos     = roots.filter((r) => r._children.length === 0);
+  // boxes once the platform has 100+ members. Partners-without-referrals are
+  // dropped entirely (they belong to the Partners admin, not this tree).
+  const networks = roots.filter((r) => r._children.length > 0);
+  const solos = roots.filter(
+    (r) => r._children.length === 0 && r.kind !== "partner",
+  );
 
   return (
     <div className="space-y-10">
@@ -113,9 +116,9 @@ export function MembersTree({
       {solos.length > 0 ? (
         <section>
           <div className="mb-3 flex items-baseline justify-between">
-            <p className="eyebrow">Independent members</p>
+            <p className="eyebrow">Organic signups</p>
             <p className="text-[11px] text-ink-muted">
-              {solos.length} with no referral activity
+              {solos.length} joined with no referrer
             </p>
           </div>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -219,6 +222,7 @@ function NodeCard({
   const childCount = node._children.length;
   const selected = node.id === selectedId;
   const displayName = node.name?.trim() || node.email.split("@")[0] || node.email;
+  const isPartner = node.kind === "partner";
 
   return (
     <button
@@ -228,17 +232,25 @@ function NodeCard({
         "group relative inline-flex w-[240px] shrink-0 items-center gap-2.5 rounded-xl border bg-surface px-3 py-2.5 text-left transition-all",
         "hover:-translate-y-0.5 hover:border-ink/25 hover:shadow-card-hover",
         selected && "border-accent shadow-card-hover ring-1 ring-accent/30",
-        !selected && isRoot && "border-ink/20 shadow-card",
-        !selected && !isRoot && "border-hairline",
+        !selected && isPartner && "border-accent/50 bg-accent/[0.03] shadow-card",
+        !selected && !isPartner && isRoot && "border-ink/20 shadow-card",
+        !selected && !isPartner && !isRoot && "border-hairline",
       )}
     >
-      <div className="grid size-9 shrink-0 place-items-center rounded-full border border-hairline bg-surface-subtle text-[12px] font-semibold text-ink">
+      <div
+        className={cn(
+          "grid size-9 shrink-0 place-items-center rounded-full border text-[12px] font-semibold",
+          isPartner
+            ? "border-accent/40 bg-accent/10 text-accent"
+            : "border-hairline bg-surface-subtle text-ink",
+        )}
+      >
         {initials(node.name, node.email)}
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
           <p className="truncate text-[13px] font-semibold text-ink">{displayName}</p>
-          {node.is_verified ? (
+          {node.is_verified && !isPartner ? (
             <Check className="size-3 shrink-0 text-emerald-600" aria-label="Verified" />
           ) : null}
         </div>
@@ -248,7 +260,7 @@ function NodeCard({
               {node.referral_code}
             </code>
           ) : null}
-          {node.intent ? (
+          {!isPartner && node.intent ? (
             <span
               className={cn(
                 "rounded-full border px-1.5 text-[9.5px] font-medium capitalize leading-[1.4]",
@@ -261,8 +273,15 @@ function NodeCard({
         </div>
       </div>
       <div className="flex shrink-0 flex-col items-end gap-0.5">
-        <span className="rounded-full bg-ink/5 px-1.5 text-[9.5px] font-medium uppercase tracking-wider text-ink-muted">
-          {isRoot ? "Root" : `T${node._depth}`}
+        <span
+          className={cn(
+            "rounded-full px-1.5 text-[9.5px] font-semibold uppercase tracking-wider",
+            isPartner
+              ? "bg-accent/15 text-accent"
+              : "bg-ink/5 text-ink-muted font-medium",
+          )}
+        >
+          {isPartner ? "Partner" : isRoot ? "Root" : `T${node._depth}`}
         </span>
         {childCount > 0 ? (
           <span className="rounded-full bg-accent/10 px-1.5 text-[10px] font-semibold tabular-nums text-accent">
