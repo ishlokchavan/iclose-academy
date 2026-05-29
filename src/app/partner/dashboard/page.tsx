@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+import { SignOutButton } from "../sign-out-button";
+
 import { CopyReferralLink } from "./copy-referral-link";
 
 export default async function PartnerDashboardPage() {
@@ -35,8 +37,13 @@ export default async function PartnerDashboardPage() {
 
   return (
     <main className="min-h-screen px-6 py-16 max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold mb-2">Your Dashboard</h1>
-      <p className="text-gray-500 mb-10">Welcome back, {partner?.name}</p>
+      <div className="flex items-start justify-between mb-10">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Your Dashboard</h1>
+          <p className="text-gray-500">Welcome back, {partner?.name}</p>
+        </div>
+        <SignOutButton />
+      </div>
 
       <div className="grid grid-cols-3 gap-4 mb-10">
         <div className="border rounded-xl p-6 text-center">

@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+import { SignOutButton } from "../../partner/sign-out-button";
+
 export default async function AdminPartnersPage() {
   const supabase = await createSupabaseServerClient();
   const {
@@ -16,14 +18,17 @@ export default async function AdminPartnersPage() {
 
   return (
     <main className="min-h-screen px-6 py-16 max-w-5xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8">All Partners</h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold">All Partners</h1>
+        <SignOutButton />
+      </div>
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b text-left text-gray-500">
             <th className="pb-3">Name</th>
             <th className="pb-3">Email</th>
             <th className="pb-3">Phone</th>
-            <th className="pb-3">Slug</th>
+            <th className="pb-3">Code</th>
             <th className="pb-3">Joined</th>
           </tr>
         </thead>
