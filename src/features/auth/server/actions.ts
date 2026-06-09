@@ -194,7 +194,11 @@ export async function sendOtpAction(
 
   try {
     await sendOtpEmail(email, code);
-  } catch {
+  } catch (err) {
+    // Surface the real SMTP/Brevo failure in server logs — the client still
+    // gets a generic message, but a swallowed error here is impossible to
+    // debug in production (e.g. Brevo rejecting an unverified From sender).
+    console.error("[sendOtpAction] sendOtpEmail failed", err);
     return { error: "Failed to send email. Please try again." };
   }
 
@@ -290,8 +294,10 @@ export async function forgotPasswordAction(
   if (!error && data?.properties?.action_link) {
     try {
       await sendResetEmail(email, data.properties.action_link);
-    } catch {
-      // Silent — don't expose email send failures to the client
+    } catch (err) {
+      // Stay silent to the client (avoid email enumeration), but log
+      // server-side so a Brevo/SMTP rejection is debuggable.
+      console.error("[forgotPasswordAction] sendResetEmail failed", err);
     }
   }
 

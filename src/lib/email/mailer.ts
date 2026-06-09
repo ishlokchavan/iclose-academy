@@ -44,9 +44,10 @@ export function getMailer() {
 export function getFrom() {
   // BREVO_FROM_EMAIL is expected in nodemailer's display-name format, e.g.
   //   iClose Academy <noreply@iclose.ae>
-  // Fall back to GMAIL_USER for legacy local-dev setups.
-  return (
-    process.env.BREVO_FROM_EMAIL ??
-    `"iClose Academy" <${process.env.GMAIL_USER ?? "noreply"}>`
-  );
+  // The address MUST be a sender Brevo accepts: a verified single-sender or an
+  // address on a domain authenticated in Brevo. Brevo rejects free-domain
+  // senders (gmail.com, etc.), so the fallback uses the authenticated
+  // iclose.ae domain — never the legacy Gmail account — to avoid silently
+  // configuring a sender Brevo will refuse.
+  return process.env.BREVO_FROM_EMAIL ?? '"iClose Academy" <noreply@iclose.ae>';
 }
