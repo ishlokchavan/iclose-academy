@@ -55,5 +55,5 @@ export function getFrom() {
   // senders (gmail.com, etc.), so the fallback uses the authenticated
   // iclose.ae domain — never the legacy Gmail account — to avoid silently
   // configuring a sender Brevo will refuse.
-  return process.env.BREVO_FROM_EMAIL ?? '"iClose Academy" <noreply@iclose.ae>';
+  return process.env.BREVO_FROM_EMAIL ?? '"iClose Academy" <hello@iclose.ae>';
 }
