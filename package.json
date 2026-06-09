@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "email:test": "node --env-file=.env.local scripts/test-brevo-email.mjs",
     "db:types": "supabase gen types typescript --project-id nnkicmfsdbfpucfcnutn --schema public > src/types/db.ts"
   },
   "dependencies": {
